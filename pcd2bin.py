@@ -1,8 +1,8 @@
 import os
 import numpy as np
 import fire
-
-
+from tqdm import tqdm
+#USAGE: python3 pcd2bin.py  convert [data] [out] [num]
 def read_pcd(filepath):
     lidar = []
     with open(filepath, 'r') as f:
@@ -16,6 +16,8 @@ def read_pcd(filepath):
 
 
 def convert(pcdfolder, binfolder, convert_number):
+    if(convert_number == -1):
+        convert_number = 99999999
     file_list = os.listdir(pcdfolder)
     file_list.sort()
     count = 0
@@ -23,8 +25,11 @@ def convert(pcdfolder, binfolder, convert_number):
         pass
     else:
         os.makedirs(binfolder)
-    for file in file_list:
-        print(count)
+    convert_number = min(convert_number,len(file_list))
+    print("Total: ", len(file_list)," pcds")
+    print("Convert: ", convert_number, " pcds")
+    file_list = file_list[:convert_number]
+    for (count,file) in  enumerate(tqdm(file_list, desc="Converting")):     
         (filename, extension) = os.path.splitext(file)
         if extension == ".pcd" and count < convert_number:
             velodyne_file = os.path.join(pcdfolder, filename) + '.pcd'
@@ -32,7 +37,8 @@ def convert(pcdfolder, binfolder, convert_number):
             pl = pl.reshape(-1, 4).astype(np.float32)
             velodyne_file_new = os.path.join(binfolder, filename) + '.bin'
             pl.tofile(velodyne_file_new)
-            count += 1
+        
+        
 
 
 if __name__ == "__main__":
