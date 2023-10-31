@@ -64,7 +64,7 @@ def main(datapath, exp, save,waysidenum,numperseq,clean, bin):
         d = os.path.join(datapath, d)
         TIMESTAMP = os.path.basename(d)
         
-        if TIMESTAMP == "@eaDir" or TIMESTAMP == "skitti-format":
+        if TIMESTAMP == "@eaDir" or TIMESTAMP[:6] == "skitti":
             continue
 
         print(d)
@@ -99,6 +99,7 @@ def main(datapath, exp, save,waysidenum,numperseq,clean, bin):
                 os.system("ln -sf {} {}".format(s1, s2))
             with open(os.path.join(outpath, "timestamp.txt"), "w") as timestamp_file:
                 timestamp_file.write("FROM:{}\nFrame:{} ~ {}".format(pcd_list[bi], i, iend-1))
+                print("Put Frame:{} ~ {} in SEQ {}".format(i, iend-1, format_base))
             with open(os.path.join(outpath, "calib.txt"), "w") as calib_file:
                 calib_file.write("{}".format(CALIB))
             open(os.path.join(outpath, "times.txt"), "w").close()
