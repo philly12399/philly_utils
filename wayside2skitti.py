@@ -54,10 +54,14 @@ import click
 )
 def main(datapath, exp, save,waysidenum,numperseq,clean, bin):
     CALIB="P0: 1 0 0 0 0 1 0 0 0 0 1 0\nP1: 1 0 0 0 0 1 0 0 0 0 1 0\nP2: 1 0 0 0 0 1 0 0 0 0 1 0\nP3: 1 0 0 0 0 1 0 0 0 0 1 0\nTr: 1 0 0 0 0 1 0 0 0 0 1 0\n"
+
     savepath = save+"/{}/skitti-format/sequences/".format(exp)
     if os.path.exists(savepath) and clean:
         os.system("rm -rf {}".format(savepath))
-    wayside = "wayside"+str(3)
+    if(waysidenum == -1):
+        wayside = ""
+    else:
+        wayside = "wayside"+str(waysidenum)
     pcd_list=[]
     bin_list=[]
     for d in os.listdir(datapath):
