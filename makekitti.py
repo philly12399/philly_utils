@@ -54,7 +54,7 @@ def main(pcd, outpath, calib, label,maxseq, clean):
     seqlist=sorted(os.listdir(pcd))
     count=0
     #skip sequence 
-    skip=[1]
+    skip=[]
     for d in seqlist:
         count+=1
         if(count in  skip):
