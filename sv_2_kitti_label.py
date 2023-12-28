@@ -27,13 +27,20 @@ import json
     default=False,
     help="Clean previous output or not.",
 )
-def main(sv, outpath, clean):
+@click.option(
+    "--mode",
+    "-m",
+    type=str,
+    default="all",
+    help="kitti label mode  one or all(one obj / all obj one file)",
+)
+def main(sv, outpath, clean, mode):
     if os.path.exists(outpath) and clean:
         os.system("rm -rf {}".format(outpath))
         print("clean")
     os.system("mkdir -p {}".format(outpath))
     sv_episodes = sv_parse(sv)
-    sv2kittilabel(sv_episodes, outpath)
+    sv2kittilabel(sv_episodes, outpath, mode)
 
 def sv_parse(sv):
     l = os.listdir(sv)
@@ -58,7 +65,7 @@ def sv_parse(sv):
     sv_episodes['datasets']=data_json
     return sv_episodes       
 
-def sv2kittilabel(sv_episodes, outpath):
+def sv2kittilabel(sv_episodes, outpath, mode):
     for key in sv_episodes['datasets']:
         data = sv_episodes['datasets'][key]
         name = data["name"]
@@ -67,6 +74,7 @@ def sv2kittilabel(sv_episodes, outpath):
         kitti_outpath = os.path.join(outpath, name+"_kitti")
         os.system("mkdir -p {}".format(kitti_outpath))
         obj={}
+        allobj=""
         id1 = 0
         for o in ann["objects"]:
             obj[o["key"]] = {"class":o["classTitle"], "id":id1, "bboxes":"" }
@@ -78,13 +86,21 @@ def sv2kittilabel(sv_episodes, outpath):
                 bd=bbox["geometry"]["dimensions"]
                 euler=bbox["geometry"]["rotation"]["z"]
                 bp=bbox["geometry"]["position"]
-                obj[k]["bboxes"]+=f"{fid} {obj[k]['id']} {obj[k]['class']} 0 0 0 0 0 0 0 {bd['x']} {bd['y']} {bd['z']} {bp['x']} {bp['y']} {bp['z']} {euler}\n"
-        for objkey in obj:
-            o=obj[objkey]
-            filename =  f"{o['id']:06d}"+'.txt' 
+                obj[k]["bboxes"]+=f"{frame['index']} {obj[k]['id']} {obj[k]['class']} 0 0 0 0 0 0 0 {bd['x']} {bd['y']} {bd['z']} {bp['x']} {bp['y']} {bp['z']} {euler}\n"
+                allobj+=f"{frame['index']} {obj[k]['id']} {obj[k]['class']} 0 0 0 0 0 0 0 {bd['x']} {bd['y']} {bd['z']} {bp['x']} {bp['y']} {bp['z']} {euler}\n"
+        if(mode=='all'):
+            filename =  f"label.txt"
             outfile = open(os.path.join(kitti_outpath,filename), "w")
-            outfile.write(o['bboxes'])
+            outfile.write(allobj)
             outfile.close()
+        elif(mode=='one'):
+            for objkey in obj:
+                o=obj[objkey]
+                filename =  f"{o['id']:06d}"+'.txt' 
+                outfile = open(os.path.join(kitti_outpath,filename), "w")
+                outfile.write(o['bboxes'])
+                outfile.close()
+        
 
 
 def index2fid(index, fpmap):
