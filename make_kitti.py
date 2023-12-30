@@ -14,7 +14,7 @@ import click
     "--outpath",
     "-o",
     type=str,
-    default="/home/philly12399/philly_data/pingtung-tracking-val/val/kitti-format/",
+    default="/home/philly12399/philly_data/pingtung-tracking-val/val/kitti-format/ttt/",
     help="output dir",
 )
 @click.option(
@@ -67,29 +67,41 @@ def main(pcd, outpath, calib, label,maxseq, clean):
         os.system("mkdir -p {}".format(outseqpath))
 
         # pcd2bin  velodyne
+        
         pcdpath=os.path.join(pcd, d)
+        pcdlistdir = sorted(os.listdir(pcdpath))
+        num = len(pcdlistdir)
         binpath=os.path.join(outseqpath,"velodyne")
-        os.system("python3 pcd2bin.py convert {} {} -1".format(pcdpath, binpath))
-       
+        os.system("python3 pcd_2_bin.py convert {} {} -1".format(pcdpath, binpath))
+        os.system("python3 align_filename.py -p {} -e .bin -s 0".format(binpath))
         #label 
         plist=sorted(os.listdir(pcdpath))
 
         labelpath=os.path.join(label, d)
         newlabelpath=os.path.join(outseqpath,"label_2")
         os.system("cp -r  {} {}".format(labelpath,newlabelpath))
-        for i, p in enumerate(sorted(os.listdir(newlabelpath))):
-            f1=os.path.join(newlabelpath,p)
-            f2=os.path.join(newlabelpath,plist[i][:6]+".txt")
-            os.system("mv {} {}".format(f1,f2))
+        # for i, p in enumerate(sorted(os.listdir(newlabelpath))):
+        #     f1=os.path.join(newlabelpath,p)
+        #     f2=os.path.join(newlabelpath, str(i).zfill(6) + ".txt")
+        #     os.system("mv {} {}".format(f1,f2))
 
         
         # calib
         newcalibpath=os.path.join(outseqpath,"calib")
         os.system("mkdir -p {}".format(newcalibpath))
-        for p in plist:     
-            ncp=os.path.join(newcalibpath,p[:6]+".txt")
+        for i in range(num):     
+            ncp=os.path.join(newcalibpath, str(i).zfill(6) + ".txt")
             os.system("cp  {} {}".format(calib,ncp))
-        
+            
+        # seqmap
+        seqmappath=os.path.join(outseqpath,"seqmap")
+        os.system("mkdir -p {}".format(seqmappath))
+        seqmappath = os.path.join(seqmappath, "seqmap.txt")
+        outfile = open(seqmappath, "w")    
+        msg=f"Range: {pcdlistdir[0]} ~ {pcdlistdir[-1]}\nTotal: {num} pcds \n"
+        outfile.write(msg)
+        outfile.close()
+        print("seqmap complete")
 
     
 if __name__ == "__main__":

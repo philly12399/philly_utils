@@ -82,7 +82,7 @@ def main(pcd, outpath, calib, label,seq,imgex, clean):
     #  Merge kitti tracks if you have many object tracks label file
     #  os.system("python3 merge_kitti_tracks -i {} -o {}".format())
     plist=sorted(os.listdir(pcd))
-    labelpath=os.path.join(outpath,"label_2/")
+    labelpath=os.path.join(outpath,"label_02/")
     os.system("mkdir -p {}".format(labelpath))
     labelpath=os.path.join(labelpath, seqstr+".txt")
     os.system("cp {} {}".format(label,labelpath))
@@ -100,7 +100,7 @@ def main(pcd, outpath, calib, label,seq,imgex, clean):
     os.system("mkdir -p {}".format(seqmappath))
     seqmappath = os.path.join(seqmappath, seqstr+".txt")
     outfile = open(seqmappath, "w")    
-    msg=f"Range: {pcdlistdir[0]}.pcd ~ {pcdlistdir[-1]}.pcd\nTotal: {num} pcds \n"
+    msg=f"Range: {pcdlistdir[0]} ~ {pcdlistdir[-1]}\nTotal: {num} pcds \n"
     outfile.write(msg)
     outfile.close()
     print("seqmap complete")
