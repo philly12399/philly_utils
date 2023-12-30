@@ -35,7 +35,7 @@ import click
     "--maxseq",
     "-m",
     type=int,
-    default=3,
+    default=4,
     help="maxseq convert",
 )
 @click.option(
@@ -54,7 +54,7 @@ def main(pcd, outpath, calib, label,maxseq, clean):
     seqlist=sorted(os.listdir(pcd))
     count=0
     #skip sequence 
-    skip=[]
+    skip=[1,2,3]
     for d in seqlist:
         count+=1
         if(count in  skip):
