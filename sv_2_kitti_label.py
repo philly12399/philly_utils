@@ -8,8 +8,8 @@ import json
     "--sv",
     "-s",
     type=str,
-    default="/home/philly12399/philly_data/pingtung-tracking-val/sv/pingtungw1_seq4_episodes",
-    # default="/home/philly12399/svtest",
+    # default="/home/philly12399/philly_data/pingtung-tracking-val/sv/pingtungw1_seq4_episodes",
+    default="/home/philly12399/seq4",
 
     help="Path of sv episodes",
 )
@@ -73,12 +73,21 @@ def sv2kittilabel(sv_episodes, outpath, mode):
         fpmap = data["frame_pointcloud_map"]
         kitti_outpath = os.path.join(outpath, name+"_kitti")
         os.system("mkdir -p {}".format(kitti_outpath))
+        frame_count = ann["framesCount"]
         obj={}
         allobj=""
         id1 = 0
         for o in ann["objects"]:
-            obj[o["key"]] = {"class":o["classTitle"], "id":id1, "bboxes":"" }
+            # tag
+            taglist = [-1 for i in range(frame_count)]
+            for t in o["tags"]:
+                value = t["value"]
+                for r in range(t["frameRange"][0],t["frameRange"][1]+1):
+                    taglist[r] = int(value)
+            # bbox
+            obj[o["key"]] = {"class":o["classTitle"], "id":id1, "bboxes":"" , "tags":taglist}
             id1+=1
+        
         for frame in ann["frames"]:
             fid = index2fid(frame["index"], fpmap)
             for bbox in frame["figures"]:
@@ -86,8 +95,14 @@ def sv2kittilabel(sv_episodes, outpath, mode):
                 bd=bbox["geometry"]["dimensions"]
                 euler=bbox["geometry"]["rotation"]["z"]
                 bp=bbox["geometry"]["position"]
-                obj[k]["bboxes"]+=f"{frame['index']} {obj[k]['id']} {obj[k]['class']} 0 0 0 0 0 0 0 {bd['x']} {bd['y']} {bd['z']} {bp['x']} {bp['y']} {bp['z']} {euler}\n"
-                allobj+=f"{frame['index']} {obj[k]['id']} {obj[k]['class']} 0 0 0 0 0 0 0 {bd['x']} {bd['y']} {bd['z']} {bp['x']} {bp['y']} {bp['z']} {euler}\n"
+                # check tag
+                occlude = obj[k]["tags"][frame["index"]]
+                if(occlude == -1):
+                    print(f"frame:{frame['index']} obj:{ sv_episodes['key_id_map']['objects'][k] } notags")
+                trackmsg = f"{frame['index']} {obj[k]['id']} {obj[k]['class']} 0 {occlude} 0 0 0 0 0 {bd['x']} {bd['y']} {bd['z']} {bp['x']} {bp['y']} {bp['z']} {euler}\n"
+                obj[k]["bboxes"]+=trackmsg
+                allobj+=trackmsg
+        
         if(mode=='all'):
             filename =  f"label.txt"
             outfile = open(os.path.join(kitti_outpath,filename), "w")
