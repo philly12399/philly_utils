@@ -17,7 +17,7 @@ import json
     "--outpath",
     "-o",
     type=str,
-    default="/home/philly12399/philly_data/sv_out",
+    default="./",
     help="Path of output",
 )
 @click.option(
@@ -65,14 +65,14 @@ def sv_parse(sv):
     sv_episodes['datasets']=data_json
     return sv_episodes       
 
-def sv2kittilabel(sv_episodes, outpath, mode, realsize=False): #realsize是一次要調obj所有bbox大小的時候使用的
+def sv2kittilabel(sv_episodes, outpath, mode): #realsize是一次要調obj所有bbox大小的時候使用的
     for key in sv_episodes['datasets']:
         data = sv_episodes['datasets'][key]
         name = data["name"]
         ann = data["annotation"]
         fpmap = data["frame_pointcloud_map"]
-        kitti_outpath = os.path.join(outpath, name+"_kitti")
-        os.system("mkdir -p {}".format(kitti_outpath))
+        svann_outpath = os.path.join(outpath, "annotation.json")
+        os.system("mkdir -p {}".format(outpath))
         frame_count = ann["framesCount"]
         obj={}
         allobj=""
@@ -93,14 +93,13 @@ def sv2kittilabel(sv_episodes, outpath, mode, realsize=False): #realsize是一�
             id1+=1
 
         ##collect realsize
-        if(realsize):
-            for objk in obj:
-                r = obj[objk]["realsize_index"]      
-                for f in ann["frames"][r]["figures"]:           
-                    if(f["objectKey"] == objk):
-                        obj[objk]["realsize"] = f["geometry"]["dimensions"]
-                        break
-                # print(obj[objk]["id"], obj[objk]["realsize"])
+        for objk in obj:
+            r = obj[objk]["realsize_index"]      
+            for f in ann["frames"][r]["figures"]:           
+                if(f["objectKey"] == objk):
+                    obj[objk]["realsize"] = f["geometry"]["dimensions"]
+                    break
+            # print(obj[objk]["id"], obj[objk]["realsize"])
 
         
         ##collect other property and output
@@ -108,33 +107,31 @@ def sv2kittilabel(sv_episodes, outpath, mode, realsize=False): #realsize是一�
             fid = index2fid(frame["index"], fpmap)
             for bbox in frame["figures"]:
                 k = bbox["objectKey"]
-                if(realsize):
-                    bd= obj[k]["realsize"]
-                else:
-                    bd=bbox["geometry"]["dimensions"]
-                    
-                euler=bbox["geometry"]["rotation"]["z"]
-                bp=bbox["geometry"]["position"]
-                # check tag
-                occlude = obj[k]["tags"][frame["index"]]
-                if(occlude == -1):
-                    print(f"frame:{frame['index']} obj:{ sv_episodes['key_id_map']['objects'][k] } notags")
-                trackmsg = f"{frame['index']} {obj[k]['id']} {obj[k]['class']} 0 {occlude} 0 0 0 0 0 {bd['x']} {bd['y']} {bd['z']} {bp['x']} {bp['y']} {bp['z']} {euler}\n"
-                obj[k]["bboxes"]+=trackmsg
-                allobj+=trackmsg
+                bbox["geometry"]["dimensions"] = obj[k]["realsize"]
+        with open(svann_outpath, 'w') as fp:
+            json.dump(ann, fp)           
+                # euler=bbox["geometry"]["rotation"]["z"]
+                # bp=bbox["geometry"]["position"]
+                # # check tag
+                # occlude = obj[k]["tags"][frame["index"]]
+                # if(occlude == -1):
+                #     print(f"frame:{frame['index']} obj:{ sv_episodes['key_id_map']['objects'][k] } notags")
+                # trackmsg = f"{frame['index']} {obj[k]['id']} {obj[k]['class']} 0 {occlude} 0 0 0 0 0 {bd['x']} {bd['y']} {bd['z']} {bp['x']} {bp['y']} {bp['z']} {euler}\n"
+                # obj[k]["bboxes"]+=trackmsg
+                # allobj+=trackmsg
         
-        if(mode=='all'):
-            filename =  f"label.txt"
-            outfile = open(os.path.join(kitti_outpath,filename), "w")
-            outfile.write(allobj)
-            outfile.close()
-        elif(mode=='one'):
-            for objkey in obj:
-                o=obj[objkey]
-                filename =  f"{o['id']:06d}"+'.txt' 
-                outfile = open(os.path.join(kitti_outpath,filename), "w")
-                outfile.write(o['bboxes'])
-                outfile.close()
+        # if(mode=='all'):
+        #     filename =  f"label.txt"
+        #     outfile = open(os.path.join(kitti_outpath,filename), "w")
+        #     outfile.write(allobj)
+        #     outfile.close()
+        # elif(mode=='one'):
+        #     for objkey in obj:
+        #         o=obj[objkey]
+        #         filename =  f"{o['id']:06d}"+'.txt' 
+        #         outfile = open(os.path.join(kitti_outpath,filename), "w")
+        #         outfile.write(o['bboxes'])
+        #         outfile.close()
         
 
 
