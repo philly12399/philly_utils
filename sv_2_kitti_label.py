@@ -10,7 +10,6 @@ import json
     type=str,
     # default="/home/philly12399/philly_data/pingtung-tracking-val/sv/pingtungw1_seq4_episodes",
     default="/home/philly12399/seq4",
-
     help="Path of sv episodes",
 )
 @click.option(
@@ -65,7 +64,7 @@ def sv_parse(sv):
     sv_episodes['datasets']=data_json
     return sv_episodes       
 
-def sv2kittilabel(sv_episodes, outpath, mode, realsize=False): #realsize是一次要調obj所有bbox大小的時候使用的
+def sv2kittilabel(sv_episodes, outpath, mode, realsize=True): #realsize是一次要調obj所有bbox大小的時候使用的
     for key in sv_episodes['datasets']:
         data = sv_episodes['datasets'][key]
         name = data["name"]
@@ -96,6 +95,8 @@ def sv2kittilabel(sv_episodes, outpath, mode, realsize=False): #realsize是一�
         if(realsize):
             for objk in obj:
                 r = obj[objk]["realsize_index"]      
+                if(r==-1):
+                    print(f"{objk} no realsize tag")
                 for f in ann["frames"][r]["figures"]:           
                     if(f["objectKey"] == objk):
                         obj[objk]["realsize"] = f["geometry"]["dimensions"]
@@ -106,8 +107,13 @@ def sv2kittilabel(sv_episodes, outpath, mode, realsize=False): #realsize是一�
         ##collect other property and output
         for frame in ann["frames"]:
             fid = index2fid(frame["index"], fpmap)
+            dup={}
             for bbox in frame["figures"]:
                 k = bbox["objectKey"]
+                if(k in dup):
+                    print(k,f"duplicate at frame {frame['index']}, skip")
+                    continue
+                dup[k]=1
                 if(realsize):
                     bd= obj[k]["realsize"]
                 else:
