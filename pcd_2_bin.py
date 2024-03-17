@@ -2,7 +2,7 @@ import os
 import numpy as np
 import click
 from tqdm import tqdm
-#USAGE: python3 pcd2bin.py  convert [data] [out] [num]
+
 def read_pcd(filepath,filt):
     lidar = []
     with open(filepath, 'r') as f:
