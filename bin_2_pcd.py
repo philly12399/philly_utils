@@ -1,9 +1,34 @@
 import os
 import numpy as np
-import fire
+import click
 from tqdm import tqdm
 import open3d as o3d
-#USAGE: python3 bin2pcd.py  convert [data] [out] [num]
+
+
+@click.command()
+### Add your options here
+@click.option(
+    "--binfolder",
+    "-b",
+    type=str,
+    required=True,
+    help="Path of input bin",
+)
+@click.option(
+    "--pcdfolder",
+    "-p",
+    type=str,
+    required=True,
+    help="Path of output pcd",
+)
+@click.option(
+    "--convert_number",
+    "-n",
+    type=int,
+    default=-1,
+    help="convert number",
+)
+
 def convert(binfolder, pcdfolder, convert_number):
     if(convert_number == -1):
         convert_number = 99999999
@@ -59,4 +84,4 @@ def check(binfolder, pcdfolder, convert_number):
 
 
 if __name__ == "__main__":
-    fire.Fire()
+    convert()
