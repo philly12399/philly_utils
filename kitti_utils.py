@@ -30,7 +30,7 @@ class Object3d(object):
         self.obj_type = label[0].lower()
         # self.cls_id = cls_type_to_id(self.cls_type)
         self.truncation = float(label[1])
-        self.occlusion = float(label[2])  # 0:fully visible 1:partly occluded 2:largely occluded 3:unknown
+        self.occlusion = int(label[2])  # 0:fully visible 1:partly occluded 2:largely occluded 3:unknown
         self.alpha = float(label[3])
         self.box2d = {'x1': float(label[4]), 'y1': float(label[5]), 'x2': float(label[6]), 'y2': float(label[7])}
         self.box3d = {'h': float(label[10]), 'w': float(label[9]), 'l': float(label[8]),\

@@ -50,7 +50,6 @@ def create_groundtruth_database(kitti_path, out_path, format, num, draw):
     os.system("mkdir -p {}/gt_database".format(out_path))
 
     
-    
     label_path = os.path.join(kitti_path, "label_2")
     velodyne_path = os.path.join(kitti_path, "velodyne")
     calib_path = os.path.join(kitti_path, "calib")
@@ -67,8 +66,7 @@ def create_groundtruth_database(kitti_path, out_path, format, num, draw):
         points =  np.fromfile(os.path.join(velodyne_path, fid+".bin"), dtype=np.float32).reshape(-1,4)
         
         for obj in objs:
-            # if(obj.occlusion)
-            
+
             if(obj.obj_type not in class_cnt):
                 class_cnt[obj.obj_type] = 0
             else:
@@ -93,6 +91,7 @@ def create_groundtruth_database(kitti_path, out_path, format, num, draw):
             pl.show()
     with open(os.path.join(out_path, "kitti_dbinfos_train.pkl"), 'wb') as file:
         pickle.dump(data_info, file)
+    print(f"Extract {len(data_info)} object in {num} pcd and output to {os.path.join(out_path,'gt_database')}")
         
 def get_info(obj, point_num, fid, file_name,i):    
     obj1 = deepcopy(obj.__dict__)
