@@ -48,9 +48,9 @@ import plot
 import math
 
 def points_in_box(points, bbox):
-    bbox_roty(bbox)
+    bbox_rotz(bbox)
     center = np.array([bbox['x'], bbox['y'], bbox['z']])
-    R = roty(-bbox['roty'])
+    R = rotz(-bbox['roty'])
     # move to origin and rotate and move back
     rot_points = np.dot(R, (points-center).T).T+center
     in_points_flag = in_bbox(rot_points, bbox)
@@ -69,8 +69,8 @@ def in_bbox(points, bbox):
     return (x >= x_min) & (x <= x_max) & (y >= y_min) & (y <= y_max) & (z >= z_min) & (z <= z_max)
 
 
-def bbox_roty(bbox):
-    R = roty(bbox['roty'])
+def bbox_rotz(bbox):
+    R = rotz(bbox['roty'])
     l, w, h = bbox['l'], bbox['w'], bbox['h']
     # 3d bounding box corners
     x_corners = [l/2,l/2,-l/2,-l/2,l/2,l/2,-l/2,-l/2];
@@ -95,7 +95,7 @@ def bbox_roty(bbox):
     
     return corners_3d
 
-def roty(t):
+def rotz(t):
     """Rotation about the z-axis."""
     c = np.cos(t)
     s = np.sin(t)
