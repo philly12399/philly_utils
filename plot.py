@@ -5,12 +5,12 @@ class Plot():
     def __init__(self):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        # ax.set_xlim(-5, 5)  # Set the x-axis limits
-        # ax.set_ylim(-5, 5)  # Set the y-axis limits
-        # ax.set_zlim(-5, 5)  # Set the z-axis limits
-        ax.set_xlim(-20, 40)  # Set the x-axis limits
-        ax.set_ylim(-30, 30)  # Set the y-axis limits
-        ax.set_zlim(-5, 55)  # Set the z-axis limits
+        ax.set_xlim(-5, 5)  # Set the x-axis limits
+        ax.set_ylim(-5, 5)  # Set the y-axis limits
+        ax.set_zlim(-5, 5)  # Set the z-axis limits
+        # ax.set_xlim(-20, 20)  # Set the x-axis limits
+        # ax.set_ylim(-30, 10)  # Set the y-axis limits
+        # ax.set_zlim(-5, 35)  # Set the z-axis limits
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
         ax.set_zlabel('Z')
@@ -66,7 +66,7 @@ class Plot():
         self.ax.scatter(point[0], point[1], point[2], c='r', marker='o', s=1)
         # 設置坐標軸標簽     
         
-    def show(self):
+    def show1(self):
         plt.show()
         
     def save(self,save_path="./output.png"):

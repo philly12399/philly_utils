@@ -17,28 +17,29 @@ def get_calib_from_file(calib_file):
             'R0': R0.reshape(3, 3),
             'Tr_velo2cam': Tr_velo_to_cam.reshape(3, 4)}
     
-def get_objects_from_label(label_file):
+def get_objects_from_label(label_file, mode):
     with open(label_file, 'r') as f:
         lines = f.readlines()
-    objects = [Object3d(line) for line in lines]
+    objects = [Object3d(line, mode) for line in lines]
     return objects
 
 class Object3d(object):
-    def __init__(self, line):
+    def __init__(self, line, mode):
         label = line.strip().split(' ')
         self.src = line
+        if(mode == "track"):
+            self.frame_id = int(label[0])
+            self.track_id = int(label[1])
+            label = label[2:]
         self.obj_type = label[0].lower()
-        # self.cls_id = cls_type_to_id(self.cls_type)
         self.truncation = float(label[1])
         self.occlusion = int(label[2])  # 0:fully visible 1:partly occluded 2:largely occluded 3:unknown
         self.alpha = float(label[3])
         self.box2d = {'x1': float(label[4]), 'y1': float(label[5]), 'x2': float(label[6]), 'y2': float(label[7])}
         self.box3d = {'h': float(label[10]), 'w': float(label[9]), 'l': float(label[8]),\
             'x':float(label[11]) ,'y':float(label[12]) ,'z':float(label[13]) , 'roty': float(label[14])}
-        # self.dis_to_cam = np.linalg.norm(self.loc)
         self.score = float(label[15]) if label.__len__() == 16 else -1.0
-        # self.level_str = None
-        # self.level = self.get_kitti_obj_level()
+
     def to_str(self):
         # print_str = f"{self.obj_type} {self.truncation} {self.occlusion} {self.alpha} box2d: {self.box2d} box3d: {self.box3d} score:{self.score }"
         print_str = f"{self.obj_type} box3d: {self.box3d} score:{self.score }"
