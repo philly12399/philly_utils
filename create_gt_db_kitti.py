@@ -128,9 +128,10 @@ def create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, cle
         seqlist = sorted(os.listdir(os.path.join(kitti_path, "velodyne")))
     print(seqlist)
     
-    occ_filt=[]
+    occ_filt=[1,2,3]
     print(f"With occlusion filter {occ_filt}")       
-        
+    class_filt=['car']
+    
     for s in seqlist:
         seq = str(s).zfill(4)
         label_path = os.path.join(kitti_path, "label_02",f"{seq}.txt")
@@ -154,8 +155,11 @@ def create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, cle
             fid = l[:-4]
             points =  np.fromfile(os.path.join(velodyne_path, fid+".bin"), dtype=np.float32).reshape(-1,4)
             for obj in objs_frame[i]:
+                if(not obj.obj_type in class_filt):
+                    continue
                 if(obj.occlusion in occ_filt):
                     continue
+                
                 if(obj.obj_type not in class_cnt):
                     class_cnt[obj.obj_type] = 0
                 else:
@@ -181,7 +185,7 @@ def create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, cle
         all_data_info[seq] = data_info       
     with open(os.path.join(out_path, "kitti_dbinfos_train.pkl"), 'wb') as file:
         pickle.dump(all_data_info, file)
-        
+   
 def get_info(obj, point_num, fid, file_name,i):    
     obj1 = deepcopy(obj.__dict__)
     obj1.pop('src')    
