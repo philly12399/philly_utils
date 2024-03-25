@@ -78,7 +78,9 @@ def extract_class_shapenet(classname):
         with open(os.path.join(outpath2, f'{s}.txt'), 'w') as file:
             file.write(buffer)
             
-def pack_data(binpath,outpath,cls='car'):
+def pack_data(binpath, outpath, cls='car'):
+    datapath=binpath[:binpath.find('gt_database')]
+    
     l = sorted(os.listdir(binpath))
     outpath1 = os.path.join(outpath, "shapenet_pc")
     outpath2 = os.path.join(outpath, "ShapeNet-55")
@@ -95,8 +97,9 @@ def pack_data(binpath,outpath,cls='car'):
         os.system(f"cp {a} {b}")
     with open(os.path.join(outpath2, f'test.txt'), 'w') as file:
         file.write(buffer)
+    os.system(f"cp {datapath}/kitti_dbinfos_train.pkl {outpath2}/test.pkl")
 
 if __name__ == "__main__":
     # shapenet2pcd()
     #extract_class_shapenet('motorbike')
-#    pack_data('./output/car_occ_0/gt_database/0004/','./output/shape_car_0/','car')
+    pack_data('./output/car_occ_0/gt_database/0004/','./output/seq4_car_occ0/','car')

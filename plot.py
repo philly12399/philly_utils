@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
+import open3d as o3d
 class Plot():
     def __init__(self):
         fig = plt.figure()
@@ -81,3 +83,21 @@ class Plot():
                         [0, 0,  1]])
 
 
+def draw_pcd_and_bbox(pcd, box):  
+    p= o3d.geometry.PointCloud()
+    p.points = o3d.utility.Vector3dVector(pcd)
+    b = o3d.geometry.OrientedBoundingBox()
+    b.center = [0,0,0]
+    b.extent = [box['l'],box['w'],box['h']]
+    R = o3d.geometry.OrientedBoundingBox.get_rotation_matrix_from_xyz((0, 0,box['roty']))
+    b.rotate(R, b.center)
+    
+    vis = o3d.visualization.Visualizer()
+    vis.create_window()
+    vis.add_geometry(p)
+    vis.add_geometry(b)
+    vis.get_render_option().background_color = np.asarray([0, 0, 0]) # 設置一些渲染屬性
+    vis.run()
+    vis.destroy_window()
+    # o3d.visualization.draw_geometries([p,b], width=800, height=500)    
+    return
