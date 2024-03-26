@@ -18,20 +18,22 @@ def get_mask(pcd, box, mask_ratio=0.6):
     pcdR = np.dot(Reflect, pcd.T).T
     pcd = np.concatenate((pcd, pcdR), axis=0)
     # voxelize
-    voxel = voxelize(box)
-    
-    # visualize
-    p = o3d.geometry.PointCloud()
+    voxel,empty = voxelize(pcd, box)
+    print(len(empty),len(voxel))
+    p= o3d.geometry.PointCloud()
     p.points = o3d.utility.Vector3dVector(pcd)
-    
     vis = o3d.visualization.Visualizer()
+    
     vis.create_window()
-    vis.add_geometry(p)
     drawbox(vis,box)
+    vis.add_geometry(p)
+    for e in empty:
+        drawbox(vis,e)
     vis.get_render_option().background_color = np.asarray([0, 0, 0]) # 設置一些渲染屬性
     vis.run()
-    vis.destroy_window() 
-    return
+    vis.destroy_window()
+    
+    
 
 def drawbox(vis,box):
     b = o3d.geometry.OrientedBoundingBox()
@@ -39,22 +41,32 @@ def drawbox(vis,box):
     b.extent = [box['l'],box['w'],box['h']]
     vis.add_geometry(b)
     
-def voxelize(box, voxel_size=0.3):
+def voxelize(pcd, box, voxel_size=0.3):
     l, w, h = box['l'], box['w'], box['h']
+    # ln,wn,hn = int(l/voxel_size),int(w/voxel_size),int(h/voxel_size)
+    ln,wn,hn = math.ceil(l/voxel_size),math.ceil(w/voxel_size),math.ceil(h/voxel_size)
     voxel = []    
-    for x in range(0, int(l/voxel_size)):
-        for y in range(0, int(w/voxel_size)):
-            for z in range(0, int(h/voxel_size)):
+    for i in range(0, ln):
+        for j in range(0, wn):
+            for k in range(0, hn):
                 voxel.append({
-                    'x': x * voxel_size - l/2,
-                    'y': y * voxel_size - w/2,
-                    'z': z * voxel_size - h/2,
+                    'x': i * voxel_size - l/2 + voxel_size/2 ,
+                    'y': j * voxel_size - w/2 + voxel_size/2 ,
+                    'z': k * voxel_size - h/2 +voxel_size/2 ,
                     'l': voxel_size,
                     'w': voxel_size,
-                    'h': voxel_size
+                    'h': voxel_size,
+                    'cnt':0
                 })
-    return voxel
-
+    for p in pcd:
+        i,j,k = int((p[0]+l/2)/voxel_size), int((p[1]+w/2)/voxel_size), int((p[2]+h/2)/voxel_size)
+        idx = i*wn*hn+j*hn+k            
+        voxel[idx]['cnt']+=1
+    empty=[]
+    for v in voxel:
+        if(v['cnt'] == 0):
+            empty.append(v)
+    return voxel,empty
 if __name__ == "__main__":
     data_root = '/home/philly12399/philly_utils/output/seq4_car_occ0/'
     pcd_path = os.path.join(data_root, 'shapenet_pc')
@@ -66,7 +78,7 @@ if __name__ == "__main__":
         data_info = pickle.load(f)['0004']
         
     for i, d in enumerate(data_list_file):
-        if(i>1):
+        if(i>2):
             break
         d = d.strip()
         bin_file = os.path.join(pcd_path, d)
