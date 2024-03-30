@@ -128,7 +128,7 @@ def create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, cle
         seqlist = sorted(os.listdir(os.path.join(kitti_path, "velodyne")))
     print(seqlist)
     
-    occ_filt=[1,2,3]
+    occ_filt=[3]
     print(f"With occlusion filter {occ_filt}")       
     class_filt=['car']
     
@@ -157,7 +157,7 @@ def create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, cle
             for obj in objs_frame[i]:
                 if(not obj.obj_type in class_filt):
                     continue
-                if(obj.occlusion in occ_filt):
+                if(not obj.occlusion in occ_filt):
                     continue
                 
                 if(obj.obj_type not in class_cnt):
@@ -165,7 +165,7 @@ def create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, cle
                 else:
                     class_cnt[obj.obj_type] += 1
                     
-                file_name = f"{fid}_{obj.obj_type}_{class_cnt[obj.obj_type]}_track_{obj.track_id}.bin"
+                file_name = f"{fid}_{obj.obj_type}_{class_cnt[obj.obj_type]}_track_{obj.track_id}_occ_{obj.occlusion}.bin"
                 in_points_flag = kitti_utils.points_in_box(points[:,:3], obj.box3d)      
                 points_in_box = points[in_points_flag]     
                 center = np.array([obj.box3d['x'], obj.box3d['y'], obj.box3d['z']] )

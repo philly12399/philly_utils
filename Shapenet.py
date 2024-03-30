@@ -14,7 +14,10 @@ def read_pkl(path):
 
 
 def read_gt_points_from_bin(bin_file):
-    gt_points = np.fromfile(bin_file, dtype=np.float32).reshape(-1, 4)
+    gt_points = np.fromfile(bin_file, dtype=np.float32).reshape(-1, 4)[:,:3]
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(gt_points)
+    o3d.visualization.draw_geometries([pcd,], width=800, height=500)
     return gt_points
 
 def npy2pcd(npy):
@@ -78,7 +81,7 @@ def extract_class_shapenet(classname):
         with open(os.path.join(outpath2, f'{s}.txt'), 'w') as file:
             file.write(buffer)
             
-def pack_data(binpath, outpath, cls='car'):
+def pack_data_fromdb(binpath, outpath, cls='car'): #create gt db to shapenet format
     datapath=binpath[:binpath.find('gt_database')]
     
     l = sorted(os.listdir(binpath))
@@ -98,8 +101,42 @@ def pack_data(binpath, outpath, cls='car'):
     with open(os.path.join(outpath2, f'test.txt'), 'w') as file:
         file.write(buffer)
     os.system(f"cp {datapath}/kitti_dbinfos_train.pkl {outpath2}/test.pkl")
-
+    
+def pack_data_fromvis(vispath, outpath): #pointmae vis to shapenet format
+    visdir=os.listdir(vispath)
+    outpath1 = os.path.join(outpath, "shapenet_pc")
+    outpath2 = os.path.join(outpath, "ShapeNet-55")
+    os.system(f"mkdir -p {outpath1}")
+    os.system(f"mkdir -p {outpath2}")    
+    cls = visdir[0][:8]
+    buffer=""
+    for i in range(len(visdir)):
+        obj_id = f"{cls}-{i}"
+        p = os.path.join(vispath, f"{cls}_{i}",'dense_points.txt')
+        with open(p, 'r') as file:
+            lines = file.readlines()
+            xyz = []
+            for l in lines:
+                l = l.replace('\n','').split(';')
+                xyz.append([float(l[0]), float(l[1]), float(l[2]), 0])
+            xyz = np.array(xyz).astype('float32')
+            xyz.tofile(os.path.join(outpath1, f"{obj_id}.bin"))
+            x1=read_gt_points_from_bin(os.path.join(outpath1, f"{obj_id}.bin"))
+            buffer += f"{obj_id}.bin\n"
+        
+    with open(os.path.join(outpath2, f'test.txt'), 'w') as file:
+         file.write(buffer)
 if __name__ == "__main__":
     # shapenet2pcd()
     #extract_class_shapenet('motorbike')
-    pack_data('./output/car_occ_0/gt_database/0004/','./output/seq4_car_occ0/','car')
+    # pack_data_fromdb('./output/car_occ_1/gt_database/0004/','./output/seq4_car_occ1/','car')
+    for i in range(4):
+        pack_data_fromvis(f'./point_mae/output/rand_0.9_occ{i}', f'./point_mae/vis_input/rand_0.9_occ{i}')
+    
+    # read_gt_points_from_bin('./point_mae/vis_input/rand_0.9_occ0/shapenet_pc/02958343-0.bin')
+
+    
+
+    
+    
+    

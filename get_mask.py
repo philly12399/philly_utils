@@ -18,8 +18,8 @@ def get_mask(pcd, box, mask_ratio=0.6):
     pcdR = np.dot(Reflect, pcd.T).T
     pcd = np.concatenate((pcd, pcdR), axis=0)
     # voxelize
-    voxel,empty = voxelize(pcd, box)
-    print(len(empty),len(voxel))
+    voxel,empty_voxel = voxelize(pcd, box)
+    
     p= o3d.geometry.PointCloud()
     p.points = o3d.utility.Vector3dVector(pcd)
     vis = o3d.visualization.Visualizer()
@@ -27,7 +27,7 @@ def get_mask(pcd, box, mask_ratio=0.6):
     vis.create_window()
     drawbox(vis,box)
     vis.add_geometry(p)
-    for e in empty:
+    for e in empty_voxel:
         drawbox(vis,e)
     vis.get_render_option().background_color = np.asarray([0, 0, 0]) # 設置一些渲染屬性
     vis.run()
@@ -52,12 +52,14 @@ def voxelize(pcd, box, voxel_size=0.3):
                 voxel.append({
                     'x': i * voxel_size - l/2 + voxel_size/2 ,
                     'y': j * voxel_size - w/2 + voxel_size/2 ,
-                    'z': k * voxel_size - h/2 +voxel_size/2 ,
+                    'z': k * voxel_size - h/2 + voxel_size/2 ,
                     'l': voxel_size,
                     'w': voxel_size,
                     'h': voxel_size,
                     'cnt':0
                 })
+    pmax = pcd.max(0)-voxel_size/2
+    pmin = pcd.min(0)+voxel_size/2
     for p in pcd:
         i,j,k = int((p[0]+l/2)/voxel_size), int((p[1]+w/2)/voxel_size), int((p[2]+h/2)/voxel_size)
         idx = i*wn*hn+j*hn+k            
@@ -65,8 +67,12 @@ def voxelize(pcd, box, voxel_size=0.3):
     empty=[]
     for v in voxel:
         if(v['cnt'] == 0):
-            empty.append(v)
+            if(in_range(np.array([v['x'],v['y'],v['z']]), pmax, pmin)):
+                empty.append(v)
     return voxel,empty
+
+def in_range(v, pmax, pmin):
+    return (v<=pmax).all() and (v>=pmin).all()
 if __name__ == "__main__":
     data_root = '/home/philly12399/philly_utils/output/seq4_car_occ0/'
     pcd_path = os.path.join(data_root, 'shapenet_pc')
