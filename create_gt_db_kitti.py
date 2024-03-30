@@ -128,9 +128,12 @@ def create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, cle
         seqlist = sorted(os.listdir(os.path.join(kitti_path, "velodyne")))
     print(seqlist)
     
-    occ_filt=[3]
-    print(f"With occlusion filter {occ_filt}")       
-    class_filt=['car']
+    #Filter
+    OCC_FILTER=[0,1,2,3]
+    CLASS_FILTER=['car']
+    MIN_POINTS=32
+    
+    print(f"With occlusion filter {OCC_FILTER}, class filter {CLASS_FILTER}")       
     
     for s in seqlist:
         seq = str(s).zfill(4)
@@ -155,9 +158,9 @@ def create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, cle
             fid = l[:-4]
             points =  np.fromfile(os.path.join(velodyne_path, fid+".bin"), dtype=np.float32).reshape(-1,4)
             for obj in objs_frame[i]:
-                if(not obj.obj_type in class_filt):
+                if(not obj.obj_type in CLASS_FILTER):
                     continue
-                if(not obj.occlusion in occ_filt):
+                if(not obj.occlusion in OCC_FILTER):
                     continue
                 
                 if(obj.obj_type not in class_cnt):
@@ -167,13 +170,15 @@ def create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, cle
                     
                 file_name = f"{fid}_{obj.obj_type}_{class_cnt[obj.obj_type]}_track_{obj.track_id}_occ_{obj.occlusion}.bin"
                 in_points_flag = kitti_utils.points_in_box(points[:,:3], obj.box3d)      
-                points_in_box = points[in_points_flag]     
+                points_in_box = points[in_points_flag]  
+                if(points_in_box.shape[0] < MIN_POINTS):   
+                    continue
                 center = np.array([obj.box3d['x'], obj.box3d['y'], obj.box3d['z']] )
                 points_in_box[:, :3] -= center
                 points_in_box.tofile(os.path.join(db_path,file_name))
                 point_num = points_in_box.shape[0]
                 data_info.append(get_info(obj, point_num, fid, file_name,i))
-                if(draw ):
+                if(draw):
                     pl=plot.Plot()
                     pl.name(file_name[:-4])
                     # pl.draw_bbox_dict(obj.box3d)

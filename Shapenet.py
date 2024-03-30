@@ -130,8 +130,17 @@ if __name__ == "__main__":
     # shapenet2pcd()
     #extract_class_shapenet('motorbike')
     # pack_data_fromdb('./output/car_occ_1/gt_database/0004/','./output/seq4_car_occ1/','car')
-    for i in range(4):
-        pack_data_fromvis(f'./point_mae/output/rand_0.9_occ{i}', f'./point_mae/vis_input/rand_0.9_occ{i}')
+    cls = ['car','cyclist','truck']
+    cmap = {'cyclist': 'motorbike', 'truck': 'bus'}
+    
+    for c in cls:
+        c1 = c
+        if c in cmap:
+            c1 = cmap[c]
+        
+        pack_data_fromdb(f'./output/{c}_all/gt_database/0004/', f'./output/seq4_{c}_all/', c1)
+    # for i in range(4):
+    #     pack_data_fromvis(f'./point_mae/output/rand_0.9_occ{i}', f'./point_mae/vis_input/rand_0.9_occ{i}')
     
     # read_gt_points_from_bin('./point_mae/vis_input/rand_0.9_occ0/shapenet_pc/02958343-0.bin')
 
