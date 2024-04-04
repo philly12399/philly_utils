@@ -3,6 +3,7 @@ import os
 import numpy as np
 import click
 import sys
+### 
 @click.command()
 ### Add your options herea
 @click.option(
@@ -19,9 +20,7 @@ import sys
     default=0,
     help='index of path and screen',
 )
-
-
-def show_pointcloud_dir(path,index):
+def visualize_track_obj(path,index):
     split =['dense_points.txt','mask.txt']
     s0 = split[index]
     pathdir = sorted(os.listdir(path))
@@ -158,6 +157,6 @@ def show_pointcloud_dir(path,index):
 
 if __name__ == "__main__":
     # visualize()
-    show_pointcloud_dir()
+    visualize_track_obj()
 
     
