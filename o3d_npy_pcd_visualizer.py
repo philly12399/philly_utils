@@ -15,4 +15,3 @@ for di in os.listdir(parent):
     o3d.visualization.draw_geometries([pcd], width=1200, height=600)
     os.remove(f'{fn}.txt')
     
-    

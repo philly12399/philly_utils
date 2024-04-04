@@ -132,13 +132,19 @@ if __name__ == "__main__":
     # pack_data_fromdb('./output/car_occ_1/gt_database/0004/','./output/seq4_car_occ1/','car')
     cls = ['car','cyclist','truck']
     cmap = {'cyclist': 'motorbike', 'truck': 'bus'}
+
+    d=read_pkl('/home/philly12399/philly_utils/point_mae/input/seq4_car_all/ShapeNet-55/test.pkl')
+    print(len(d['0004']),d['0004'][0])
     
-    for c in cls:
-        c1 = c
-        if c in cmap:
-            c1 = cmap[c]
+    #Pack class-occall from db
+    # for c in cls:
+    #     c1 = c
+    #     if c in cmap:
+    #         c1 = cmap[c]
         
-        pack_data_fromdb(f'./output/{c}_all/gt_database/0004/', f'./output/seq4_{c}_all/', c1)
+    #     pack_data_fromdb(f'./output/{c}_all/gt_database/0004/', f'./output/seq4_{c}_all/', c1)
+    
+    #Pack form mae output vis
     # for i in range(4):
     #     pack_data_fromvis(f'./point_mae/output/rand_0.9_occ{i}', f'./point_mae/vis_input/rand_0.9_occ{i}')
     

@@ -18,7 +18,7 @@ def get_mask(pcd, box, mask_ratio=0.6):
     pcdR = np.dot(Reflect, pcd.T).T
     pcd = np.concatenate((pcd, pcdR), axis=0)
     # voxelize
-    voxel,empty_voxel = voxelize(pcd, box)
+    # voxel,empty_voxel = voxelize(pcd, box)
     
     p= o3d.geometry.PointCloud()
     p.points = o3d.utility.Vector3dVector(pcd)
@@ -27,8 +27,8 @@ def get_mask(pcd, box, mask_ratio=0.6):
     vis.create_window()
     drawbox(vis,box)
     vis.add_geometry(p)
-    for e in empty_voxel:
-        drawbox(vis,e)
+    # for e in empty_voxel:
+    #     drawbox(vis,e)
     vis.get_render_option().background_color = np.asarray([0, 0, 0]) # 設置一些渲染屬性
     vis.run()
     vis.destroy_window()
@@ -73,8 +73,9 @@ def voxelize(pcd, box, voxel_size=0.3):
 
 def in_range(v, pmax, pmin):
     return (v<=pmax).all() and (v>=pmin).all()
+
 if __name__ == "__main__":
-    data_root = '/home/philly12399/philly_utils/output/seq4_car_occ0/'
+    data_root = '/home/philly12399/thesis/philly_utils/point_mae/input/seq4_car_occ0'
     pcd_path = os.path.join(data_root, 'shapenet_pc')
     info_path = os.path.join(data_root, 'ShapeNet-55')
     with open(os.path.join(info_path, f'test.txt'), 'r') as f:

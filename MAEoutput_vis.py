@@ -1,13 +1,36 @@
 import open3d as o3d
 import os 
 import numpy as np
-import threading
-def visualize(path,index=0):
+import click
+import sys
+@click.command()
+### Add your options here
+@click.option(
+    "--index",
+    "-i",
+    type=int,
+    default=0,
+    help='index of path and screen',
+)
+@click.option(
+    "--num",
+    "-n",
+    type=int,
+    default=-1,
+    help='visualize number',
+)
+def visualize(index,num):
+    # 修改此處改變路徑
+    # VIS_PATH=['./point_mae/output/car/car_rand_0.9_occall','./point_mae/output/cyclist_rand_0.9_occall']
+    VIS_PATH=['./vis','/home/philly12399/thesis/philly_utils/point_mae/output/car/rand_0.9_occ0_2']
+    visualize_inner(VIS_PATH[index],index,num)
+    
+def visualize_inner(path,index,num):
     # os.system(f'mkdir -p {out}')
     # split = ['gt.txt', 'dense_points.txt','center.txt','vis.txt']
-    num=5
+
     # split =['mask.txt','voxelmask.txt']
-    split =['mask.txt','gt.txt','dense_points.txt']
+    split =['mask.txt','dense_points.txt']
     
     for i,f in enumerate(sorted(os.listdir(path))):
         if(num>=0 and i>=num):
@@ -46,15 +69,8 @@ def visualize(path,index=0):
     # o3d.io.write_point_cloud(out + '.xyz', pcd, write_ascii=True)
     
 
-import sys
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    try:
-        index = int(args[0])
-    except:
-        index = 0
-    pathl=['./point_mae/output/rand_0.9_occ2','./point_mae/output/rand_0.9_occ2_2']
-    visualize(pathl[index],index)
+    visualize()
     
 
     
