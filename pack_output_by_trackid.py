@@ -56,8 +56,7 @@ def pack_output_by_trackid(pcd_path, info_path, outpath):
         tracks[tid].append(d)
         tracks_info[tid].append(info)
         
-    split =['mask.txt','dense_points.txt']
-
+    split =['mask.txt','dense_points.txt','gt.txt']
     os.system(f'mkdir -p {outpath}')
     for _ , tid in enumerate(tqdm(tracks)):
         dir1 = os.path.join(outpath, tid)

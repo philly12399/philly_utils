@@ -21,7 +21,7 @@ import sys
     help='index of path and screen',
 )
 def visualize_track_obj(path,index):
-    split =['dense_points.txt','mask.txt']
+    split =['dense_points.txt','mask.txt','gt.txt']
     s0 = split[index]
     pathdir = sorted(os.listdir(path))
     for i in range(len(pathdir)):
