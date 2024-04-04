@@ -4,7 +4,7 @@ import numpy as np
 import click
 import sys
 @click.command()
-### Add your options here
+### Add your options herea
 @click.option(
     "--index",
     "-i",
