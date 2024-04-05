@@ -3,6 +3,7 @@ import os
 import numpy as np
 import click
 import sys
+import json
 ### 
 @click.command()
 ### Add your options herea
@@ -33,7 +34,7 @@ def visualize_track_obj(path,index):
     vis = o3d.visualization.VisualizerWithKeyCallback()
     dirlen = []
     for p in pathdir:
-        dirlen.append(int(sorted(os.listdir(os.path.join(path, p)))[-1][:6]))
+        dirlen.append(int(sorted(os.listdir(os.path.join(path, p)))[-1][:6])+1)
         
     def show_pointcloud(vis):
         nonlocal f_idx
@@ -51,12 +52,21 @@ def visualize_track_obj(path,index):
                 d = d.replace('\n','').split(';')
                 arr.append([float(d[0]), float(d[1]), float(d[2])])
         pcd = o3d.geometry.PointCloud()
-        pcd.points = o3d.utility.Vector3dVector(arr)
-
+        pcd.points = o3d.utility.Vector3dVector(arr) 
+        #Get previous view status
+        vs =json.loads( vis.get_view_status())['trajectory'][0]
+        
         vis.clear_geometries()
-        vis.add_geometry(pcd) # fuck bug, vis.update_geometry(pcd)沒有用！
+        vis.add_geometry(pcd) 
+        
+        #Remain view status
+        ctr = vis.get_view_control()  
+        ctr.set_zoom(vs["zoom"])
+        ctr.set_front(vs["front"])  
+        ctr.set_up(vs["up"])          
         vis.update_renderer()
         vis.poll_events()
+        
 
     def fid_forward_callback(vis):
         nonlocal f_idx
@@ -136,14 +146,41 @@ def visualize_track_obj(path,index):
         f_idx = 0            
         show_pointcloud(vis)
         return True
+    
     def help_callback(vis):
-        print("W: track+1 S: track-1  A: frame-1  D: frame+1  T: jump to track  F: jump to frame  H: help  Q: quit")
+        print("W: track+1 S: track-1  A: frame-1  D: frame+1  T: jump to track  F: jump to frame R: rotation H: help  Q: quit")
         return True
-    def quit_callback(vis):
+    
+    def quit_callback(vis):        
         exit()
         
+    def rotate_callback(vis):
+        try:
+            mode = int(input("Input rotate(1,2,3): "))
+        except:
+            print('error')
+            return True
+        ctr = vis.get_view_control()  
+        # 側面
+        if(mode == 1):
+            ctr.set_front((0, -1, 0))  
+            ctr.set_up((0, 0, 1)) 
+        # 車頂往下
+        elif(mode == 2):
+            ctr.set_front((0, 0, 1))  
+            ctr.set_up((0, 1, 0)) 
+        # 後面
+        elif(mode == 3):
+            ctr.set_front((1, 0, 0))  
+            ctr.set_up((0, 0, 1)) 
+        else:
+            return True
+        show_pointcloud(vis)
+        return True
+        
     vis.create_window()
-    # vis.get_render_option().point_size = 2  # set points size
+    # vis.get_render_option().point_size = 4  # set points size
+    #Callbacks
     vis.register_key_callback(ord('H'), help_callback)  
     vis.register_key_callback(ord('Q'), quit_callback) 
     vis.register_key_callback(ord('D'), fid_forward_callback)  
@@ -152,6 +189,12 @@ def visualize_track_obj(path,index):
     vis.register_key_callback(ord('S'), tid_back_callback)
     vis.register_key_callback(ord('F'), fid_jump_callback)
     vis.register_key_callback(ord('T'), tid_jump_callback)
+    vis.register_key_callback(ord('R'), rotate_callback)
+    
+    #Initialize
+    ctr = vis.get_view_control()  
+    ctr.set_front((0, -1, 0))  
+    ctr.set_up((0, 0, 1)) 
     show_pointcloud(vis)
     vis.run()
 
