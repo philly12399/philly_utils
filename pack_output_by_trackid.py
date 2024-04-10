@@ -33,7 +33,7 @@ CLASS='car'
 )
 
 def pack_output_by_trackid(pcd_path, info_path, outpath):
-    
+    pcd_path = os.path.join(pcd_path, 'vis')
 
     clsmap = {'car':"02958343", 'cyclist':"03790512", 'truck':"02924116"}
 

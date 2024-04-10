@@ -103,6 +103,7 @@ def pack_data_fromdb(binpath, outpath, cls='car'): #create gt db to shapenet for
     os.system(f"cp {datapath}/info.pkl {outpath2}/test.pkl")
     
 def pack_data_fromvis(vispath, outpath): #pointmae vis to shapenet format
+    vispath = os.path.join(vispath, 'vis')
     visdir=os.listdir(vispath)
     outpath1 = os.path.join(outpath, "shapenet_pc")
     outpath2 = os.path.join(outpath, "ShapeNet-55")

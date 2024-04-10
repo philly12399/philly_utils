@@ -26,6 +26,7 @@ def visualize(index,num):
     visualize_inner(VIS_PATH[index],index,num)
     
 def visualize_inner(path,index,num):
+    path = os.path.join(path, 'vis')
     # os.system(f'mkdir -p {out}')
     # split = ['gt.txt', 'dense_points.txt','center.txt','vis.txt']
 
