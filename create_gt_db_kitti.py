@@ -134,7 +134,7 @@ def create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, cle
     MIN_POINTS=32
     
     print(f"With occlusion filter {OCC_FILTER}, class filter {CLASS_FILTER}")       
-    
+    skipcnt=0
     for s in seqlist:
         seq = str(s).zfill(4)
         label_path = os.path.join(kitti_path, "label_02",f"{seq}.txt")
@@ -172,6 +172,7 @@ def create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, cle
                 in_points_flag = kitti_utils.points_in_box(points[:,:3], obj.box3d)      
                 points_in_box = points[in_points_flag]  
                 if(points_in_box.shape[0] < MIN_POINTS):   
+                    skipcnt+=1
                     continue
                 center = np.array([obj.box3d['x'], obj.box3d['y'], obj.box3d['z']] )
                 points_in_box[:, :3] -= center
@@ -186,9 +187,9 @@ def create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, cle
                     for p in points_in_box:
                         pl.draw_point(p)           
                     pl.show1()
-        print(f"Extract {len(data_info)} object in {num} pcd and output to {db_path}")
+        print(f"Extract {len(data_info)} object and skip {skipcnt} low points object in {num} pcd and output to {db_path}")
         all_data_info[seq] = data_info       
-    with open(os.path.join(out_path, "kitti_dbinfos_train.pkl"), 'wb') as file:
+    with open(os.path.join(out_path, "info.pkl"), 'wb') as file:
         pickle.dump(all_data_info, file)
    
 def get_info(obj, point_num, fid, file_name,i):    

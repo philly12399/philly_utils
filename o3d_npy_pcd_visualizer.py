@@ -15,3 +15,15 @@ for di in os.listdir(parent):
     o3d.visualization.draw_geometries([pcd], width=1200, height=600)
     os.remove(f'{fn}.txt')
     
+# p= o3d.geometry.PointCloud()
+# p.points = o3d.utility.Vector3dVector(pcd)
+# vis = o3d.visualization.Visualizer()
+
+# vis.create_window()
+# drawbox(vis,box)
+# vis.add_geometry(p)
+# # for e in empty_voxel:
+# #     drawbox(vis,e)
+# vis.get_render_option().background_color = np.asarray([0, 0, 0]) # 設置一些渲染屬性
+# vis.run()
+# vis.destroy_window()

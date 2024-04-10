@@ -100,7 +100,7 @@ def pack_data_fromdb(binpath, outpath, cls='car'): #create gt db to shapenet for
         os.system(f"cp {a} {b}")
     with open(os.path.join(outpath2, f'test.txt'), 'w') as file:
         file.write(buffer)
-    os.system(f"cp {datapath}/kitti_dbinfos_train.pkl {outpath2}/test.pkl")
+    os.system(f"cp {datapath}/info.pkl {outpath2}/test.pkl")
     
 def pack_data_fromvis(vispath, outpath): #pointmae vis to shapenet format
     visdir=os.listdir(vispath)
@@ -132,9 +132,10 @@ if __name__ == "__main__":
     # pack_data_fromdb('./output/car_occ_1/gt_database/0004/','./output/seq4_car_occ1/','car')
     cls = ['car','cyclist','truck']
     cmap = {'cyclist': 'motorbike', 'truck': 'bus'}
-
-    d=read_pkl('/home/philly12399/philly_utils/point_mae/input/seq4_car_all/ShapeNet-55/test.pkl')
-    print(len(d['0004']),d['0004'][0])
+    # pack_data_fromdb(f'./gt_db/car_mark_all/gt_database/0004/', f'./output/seq4_car_mark_all/', 'car')
+    # pack_data_fromdb(f'./gt_db/car_ab3dmot_all/gt_database/0004/', f'./output/seq4_car_ab3dmot_all/', 'car')
+    
+    # d=read_pkl('/home/philly12399/philly_utils/point_mae/input/seq4_car_all/ShapeNet-55/test.pkl')
     
     #Pack class-occall from db
     # for c in cls:

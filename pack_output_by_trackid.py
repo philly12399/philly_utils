@@ -5,7 +5,7 @@ import click
 import sys
 import pickle
 from tqdm import tqdm
-CLASS='truck'
+CLASS='car'
 
 @click.command()
 ### Add your options herea
@@ -49,10 +49,12 @@ def pack_output_by_trackid(pcd_path, info_path, outpath):
         obj = info['obj']
         clsid = clsmap[obj['obj_type']]
         tid = str(obj['track_id']).zfill(6)
+        d = os.path.join(pcd_path, f"{clsid}_{i}")
+        if(not os.path.isdir(d)):
+            break
         if(tid not in tracks):
             tracks[tid] = []
             tracks_info[tid] = []
-        d = os.path.join(pcd_path, f"{clsid}_{i}")
         tracks[tid].append(d)
         tracks_info[tid].append(info)
         

@@ -11,7 +11,7 @@ import json
     "--path",
     "-p",
     type=str,
-    default="./output_bytrackid/car_all/",
+    default="./output_bytrackid/car_all_rotxy/",
     help='visualize input path',
 )
 @click.option(
@@ -54,11 +54,15 @@ def visualize_track_obj(path,index):
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(arr) 
         #Get previous view status
+        origin=o3d.geometry.TriangleMesh.create_sphere(radius=0.05, resolution=50)
+        mesh_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.5, origin=[0,0,0])
         vs =json.loads( vis.get_view_status())['trajectory'][0]
         
         vis.clear_geometries()
         vis.add_geometry(pcd) 
-        
+        vis.add_geometry(origin) 
+        vis.add_geometry(mesh_frame) 
+
         #Remain view status
         ctr = vis.get_view_control()  
         ctr.set_zoom(vs["zoom"])
@@ -171,7 +175,7 @@ def visualize_track_obj(path,index):
             ctr.set_up((0, 1, 0)) 
         # 後面
         elif(mode == 3):
-            ctr.set_front((1, 0, 0))  
+            ctr.set_front((-1, 0, 0))  
             ctr.set_up((0, 0, 1)) 
         else:
             return True
