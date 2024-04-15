@@ -4,6 +4,7 @@ import numpy as np
 import click
 import sys
 import json
+import pickle
 ### 
 @click.command()
 ### Add your options herea
@@ -11,7 +12,7 @@ import json
     "--path",
     "-p",
     type=str,
-    default="./output_bytrackid/car_all_rotxy/",
+    default="./output_bytrackid/car_mark_all_rotxy/",
     help='visualize input path',
 )
 @click.option(
@@ -29,7 +30,12 @@ def visualize_track_obj(path,index):
     for i in range(len(pathdir)):
         path1 = os.path.join(path, pathdir[i])
         if(not os.path.isdir(path1)):
-            pathdir.pop(i)            
+            pathdir.pop(i)  
+            
+    # pkl = os.path.join(path, "info.pkl")          
+    # with open(pkl, 'rb') as file:
+    #     info = pickle.load(file)
+
     f_idx = 0 #frame id
     t_idx = 0 #track id
     vis = o3d.visualization.VisualizerWithKeyCallback()

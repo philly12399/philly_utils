@@ -32,21 +32,32 @@ def test(track_path='./output_bytrackid/car_mark_all_rotxy'):
         frames = track[tid]
         l=[]  
         for fi, f in enumerate(frames):
+            if(fi!=7):
+                continue
             pcd = read_vis_points(f)
             bbox = t_info[fi]['obj']['box3d']
             bbox['x'],bbox['y'],bbox['z'] = 0,0,0
             voxel = voxelize(pcd,bbox,0.3)
             vis.create_window()
             drawbox(vis,bbox,color = [1,0,0])
+            p_mean = []
+            pts = []
+
             for v in voxel:
-                drawbox(vis,v,True)
-            # p = o3d.geometry.PointCloud()
-            # p.points = o3d.utility.Vector3dVector(pcd)
-            # vis.add_geometry(p)
+                # drawbox(vis,v)
+                if(len(v["pts"]) > 0):
+                    pts += v["pts"].tolist()
+                if(v['mean'] is not None):
+                    p_mean.append(v['mean'])   
+            p = o3d.geometry.PointCloud()
+            # p.points = o3d.utility.Vector3dVector(p_mean)
+            p.points = o3d.utility.Vector3dVector(pts)
+            vis.add_geometry(p)
+            
             vis.get_render_option().background_color = np.asarray([0, 0, 0])
             vis.run()
             vis.destroy_window()
-        break
+            break
     # pdb.set_trace()
     # exit()
     
@@ -106,6 +117,7 @@ def drawbox(vis,box,pts=False,color=[1,1,1]):
     b.extent = [box['l'],box['w'],box['h']]
     b.color = color
     vis.add_geometry(b)
+    return
     if(pts and len(box["pts"]) > 0 ):
         p = o3d.geometry.PointCloud()
         p.points = o3d.utility.Vector3dVector(box["pts"])
