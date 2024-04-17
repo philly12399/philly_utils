@@ -41,8 +41,8 @@ def test(track_path='./output_bytrackid/car_mark_all_rotxy'):
         l=[]  
         allpts=[]
         for fi, f in enumerate(frames):
-            # if(fi!=7):
-            #     continue
+            if(fi!=7):
+                continue
             pcd = read_vis_points(f)
             vis.create_window()
             bbox = t_info[fi]['obj']['box3d']
@@ -56,6 +56,8 @@ def test(track_path='./output_bytrackid/car_mark_all_rotxy'):
             pts = []
             pdf = []
             non_empty = 0
+            neg_log_psi=0
+            ndt_score = 0 
             for vi,v in enumerate(voxel):
                 # drawbox(vis,v)
                 if(len(v["pts"]) > 0):
@@ -67,7 +69,12 @@ def test(track_path='./output_bytrackid/car_mark_all_rotxy'):
                     if(PDF_FLAG):
                         samples = np.random.multivariate_normal(v['mean'], v['cov'], NUM_SAMPLES)
                         pdf.append(samples.tolist())       
-                        
+                        mvn = scipy.stats.multivariate_normal(mean=v['mean'], cov=v['cov'], allow_singular=True)
+                        mvn = mvn.pdf(samples)
+                        log_psi = np.sum(np.log(mvn))
+                        pdf_sum = np.sum(mvn)
+                        neg_log_psi -= log_psi
+                        ndt_score -= pdf_sum
                         # try:
                         #     mvn = scipy.stats.multivariate_normal(mean=v['mean'], cov=v['cov'])
                         # except:
@@ -76,7 +83,7 @@ def test(track_path='./output_bytrackid/car_mark_all_rotxy'):
                         # print(mvn.pdf(samples[0]))
                         # print(mvn.pdf(samples[0:10]))
                         # exit()
-                      
+            print(neg_log_psi)          
             allpts+=p_mean 
             if(PDF_FLAG):                      
                 pdf = np.array(pdf).reshape(-1,3) 
@@ -154,7 +161,7 @@ def voxelize(pcd, box, voxel_size=0.3, overlap=True):
         if(len(v["pts"]) > 1):
             v['mean'] = np.mean(v["pts"],0)
             v['var'] =  np.var(v["pts"],0)
-            v['cov'] = np.cov(v["pts"],rowvar=False)
+            v['cov'] = adjust_covariance_eigenvalues(np.cov(v["pts"],rowvar=False))
             v['cov_inv'] = np.linalg.pinv(v['cov'])             
         else:
             v['mean'] = None
@@ -207,6 +214,28 @@ def in_bbox(point, bbox):
     z_min = bbox['z'] - bbox['h'] / 2
     z_max = bbox['z'] + bbox['h'] / 2
     return (x >= x_min) & (x <= x_max) & (y >= y_min) & (y <= y_max) & (z >= z_min) & (z <= z_max)
+
+def adjust_covariance_eigenvalues(covariance_matrix):
+    # 計算協方差矩陣的特征值和特征向量
+    return covariance_matrix
+    eigenvalues, eigenvectors = np.linalg.eig(covariance_matrix)
+    
+    # 將最小特征值調整為最大特征值的 0.001 倍
+    min_eigenvalue = np.min(eigenvalues)
+    max_eigenvalue = np.max(eigenvalues)
+    if min_eigenvalue < 0.001 * max_eigenvalue:
+        min_eigenvalue = 0.001 * max_eigenvalue
+    else: 
+        return covariance_matrix
+    
+    # 構造調整後的對角矩陣
+        
+    
+    adjusted_eigenvalues = np.diag(np.maximum(eigenvalues, min_eigenvalue))
+    # 重新構造調整後的協方差矩陣
+    adjusted_covariance_matrix = np.dot(np.dot(eigenvectors, adjusted_eigenvalues), np.linalg.inv(eigenvectors))
+    
+    return adjusted_covariance_matrix
 
 if __name__ == '__main__':
     test()   
