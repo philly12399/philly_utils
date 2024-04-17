@@ -6,8 +6,9 @@ import pickle
 import numpy as np
 import open3d as o3d 
 import math
-
+import scipy
 def test(track_path='./output_bytrackid/car_mark_all_rotxy'):
+    np.random.seed(0)
     track = {}
     dirlist=sorted(os.listdir(track_path))
     for i in range(len(dirlist)):
@@ -17,6 +18,7 @@ def test(track_path='./output_bytrackid/car_mark_all_rotxy'):
     with open(os.path.join(track_path, pkl), 'rb') as file:
         info = pickle.load(file)
     vis = o3d.visualization.Visualizer()
+    # vis.get_render_option().background_color = np.asarray([0, 0, 0])
     
     for t in dirlist:
         track[t] = []
@@ -28,12 +30,10 @@ def test(track_path='./output_bytrackid/car_mark_all_rotxy'):
         # one track only
         break
     
-    VOXEL_SIZE = 1.0
-    DENSITY = 1000
+    VOXEL_SIZE = 0.5
+    DENSITY = 300
     NUM_SAMPLES = int((VOXEL_SIZE**3)*DENSITY)
-    PDF_FLAG=True
-    if(PDF_FLAG):
-        print(f"Sample {NUM_SAMPLES} points per voxel")
+    PDF_FLAG=True    
     
     for i, tid in enumerate(track):
         t_info = info[tid]
@@ -41,6 +41,8 @@ def test(track_path='./output_bytrackid/car_mark_all_rotxy'):
         l=[]  
         allpts=[]
         for fi, f in enumerate(frames):
+            # if(fi!=7):
+            #     continue
             pcd = read_vis_points(f)
             vis.create_window()
             bbox = t_info[fi]['obj']['box3d']
@@ -49,35 +51,45 @@ def test(track_path='./output_bytrackid/car_mark_all_rotxy'):
             voxel = voxelize(pcd,bbox,VOXEL_SIZE,overlap=True)
 
             
-            # # drawbox(vis,bbox,color = [1,0,0])
+            drawbox(vis,bbox,color = [1,0,0])
             p_mean = []
             pts = []
             pdf = []
-
-            for v in voxel:
+            non_empty = 0
+            for vi,v in enumerate(voxel):
                 # drawbox(vis,v)
                 if(len(v["pts"]) > 0):
                     pts += v["pts"].tolist()
                 if(v['mean'] is not None):
                     p_mean.append(v['mean'])  
+                    non_empty+=1
                     #random sample     
-                    if(PDF_FLAG):                                    
+                    if(PDF_FLAG):
                         samples = np.random.multivariate_normal(v['mean'], v['cov'], NUM_SAMPLES)
-                        pdf.append(samples.tolist())
-
+                        pdf.append(samples.tolist())       
+                        
+                        # try:
+                        #     mvn = scipy.stats.multivariate_normal(mean=v['mean'], cov=v['cov'])
+                        # except:
+                        #     continue
+                        # print(samples[0])
+                        # print(mvn.pdf(samples[0]))
+                        # print(mvn.pdf(samples[0:10]))
+                        # exit()
+                      
             allpts+=p_mean 
             if(PDF_FLAG):                      
                 pdf = np.array(pdf).reshape(-1,3) 
+                print(f"Sample {NUM_SAMPLES} points per voxel. {non_empty}/{len(voxel)} voxels are non-empty.")
                 print(pdf.shape)
-            # p = o3d.geometry.PointCloud()
+            p = o3d.geometry.PointCloud()
             # p.points = o3d.utility.Vector3dVector(p_mean)
             # p.points = o3d.utility.Vector3dVector(np.array(pts))
-            # p.points = o3d.utility.Vector3dVector( pdf )
+            p.points = o3d.utility.Vector3dVector(pdf)
             
-            # vis.add_geometry(p)
-            # vis.get_render_option().background_color = np.asarray([0, 0, 0])
-            # vis.run()
-            # vis.destroy_window()
+            vis.add_geometry(p)
+            vis.run()
+            vis.destroy_window()
         # print(len(allpts))
         # exit()
         
@@ -167,13 +179,13 @@ def read_vis_points(pcd_path):
 
 
     
-def drawbox(vis,box,pts=False,color=[0,0,0]):
+def drawbox(vis,box,drawpts=False,color=[0,0,0]):
     b = o3d.geometry.OrientedBoundingBox()
     b.center = [box['x'],box['y'],box['z']]
     b.extent = [box['l'],box['w'],box['h']]
     b.color = color
     vis.add_geometry(b)
-    if(pts and len(box["pts"]) > 0 ):
+    if(drawpts and len(box["pts"]) > 0 ):
         p = o3d.geometry.PointCloud()
         p.points = o3d.utility.Vector3dVector(box["pts"])
         vis.add_geometry(p)
