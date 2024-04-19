@@ -30,11 +30,11 @@ def test(track_path='./output_bytrackid/car_mark_all_rotxy'):
         # one track only
         break
     
-    VOXEL_SIZE = 0.5
-    DENSITY = 300
+    VOXEL_SIZE = 1.0
+    DENSITY = 100
     NUM_SAMPLES = int((VOXEL_SIZE**3)*DENSITY)
     PDF_FLAG=True    
-    
+    MIN_PTS_VOXEL = 1
     for i, tid in enumerate(track):
         t_info = info[tid]
         frames = track[tid]
@@ -50,19 +50,18 @@ def test(track_path='./output_bytrackid/car_mark_all_rotxy'):
             
             voxel = voxelize(pcd,bbox,VOXEL_SIZE,overlap=True)
 
-            
             drawbox(vis,bbox,color = [1,0,0])
             p_mean = []
             pts = []
             pdf = []
             non_empty = 0
-            neg_log_psi=0
-            ndt_score = 0 
+            global_neg_log_psi=0
+            global_ndt_score = 0 
             for vi,v in enumerate(voxel):
                 # drawbox(vis,v)
                 if(len(v["pts"]) > 0):
                     pts += v["pts"].tolist()
-                if(v['mean'] is not None):
+                if(len(v["pts"]) > MIN_PTS_VOXEL and v['mean'] is not None):
                     p_mean.append(v['mean'])  
                     non_empty+=1
                     #random sample     
@@ -70,30 +69,21 @@ def test(track_path='./output_bytrackid/car_mark_all_rotxy'):
                         samples = np.random.multivariate_normal(v['mean'], v['cov'], NUM_SAMPLES)
                         pdf.append(samples.tolist())       
                         mvn = scipy.stats.multivariate_normal(mean=v['mean'], cov=v['cov'], allow_singular=True)
-                        mvn = mvn.pdf(samples)
-                        log_psi = np.sum(np.log(mvn))
-                        pdf_sum = np.sum(mvn)
-                        neg_log_psi -= log_psi
-                        ndt_score -= pdf_sum
-                        # try:
-                        #     mvn = scipy.stats.multivariate_normal(mean=v['mean'], cov=v['cov'])
-                        # except:
-                        #     continue
-                        # print(samples[0])
-                        # print(mvn.pdf(samples[0]))
-                        # print(mvn.pdf(samples[0:10]))
-                        # exit()
-            print(neg_log_psi)          
+                        mvn_sample = mvn.pdf(samples)
+                        neg_log_psi = -np.average(np.log(mvn_sample))
+                        ndt_score = -np.average(mvn_sample)  
+                        global_neg_log_psi+=neg_log_psi
+                        global_ndt_score+=ndt_score
+                         
+                        print(f"NDT score: {ndt_score}, Neg log psi: {neg_log_psi}") 
             allpts+=p_mean 
             if(PDF_FLAG):                      
                 pdf = np.array(pdf).reshape(-1,3) 
                 print(f"Sample {NUM_SAMPLES} points per voxel. {non_empty}/{len(voxel)} voxels are non-empty.")
                 print(pdf.shape)
-            p = o3d.geometry.PointCloud()
-            # p.points = o3d.utility.Vector3dVector(p_mean)
-            # p.points = o3d.utility.Vector3dVector(np.array(pts))
+                print(f"NDT score: {global_ndt_score}, Neg log psi: {global_neg_log_psi}")
+            p = o3d.geometry.PointCloud()            
             p.points = o3d.utility.Vector3dVector(pdf)
-            
             vis.add_geometry(p)
             vis.run()
             vis.destroy_window()
@@ -162,7 +152,8 @@ def voxelize(pcd, box, voxel_size=0.3, overlap=True):
             v['mean'] = np.mean(v["pts"],0)
             v['var'] =  np.var(v["pts"],0)
             v['cov'] = adjust_covariance_eigenvalues(np.cov(v["pts"],rowvar=False))
-            v['cov_inv'] = np.linalg.pinv(v['cov'])             
+            v['cov_inv'] = np.linalg.pinv(v['cov']) 
+            assert np.linalg.det(v['cov']) > 0
         else:
             v['mean'] = None
             v['var'] =  None
@@ -217,7 +208,7 @@ def in_bbox(point, bbox):
 
 def adjust_covariance_eigenvalues(covariance_matrix):
     # 計算協方差矩陣的特征值和特征向量
-    return covariance_matrix
+    # return covariance_matrix
     eigenvalues, eigenvectors = np.linalg.eig(covariance_matrix)
     
     # 將最小特征值調整為最大特征值的 0.001 倍
