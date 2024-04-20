@@ -7,101 +7,101 @@ import numpy as np
 import open3d as o3d 
 import math
 import scipy
-def test(track_path='./output_bytrackid/car_mark_all_rotxy'):
+import copy
+
+from NDTPDF import PDF
+def test(track_root='./output_bytrackid/car_mark_all_rotxy'):
     np.random.seed(0)
-    track = {}
-    dirlist=sorted(os.listdir(track_path))
+    track_path = {}
+    dirlist=sorted(os.listdir(track_root))
     for i in range(len(dirlist)):
-        path1 = os.path.join(track_path, dirlist[i])
+        path1 = os.path.join(track_root, dirlist[i])
         if(not os.path.isdir(path1)):
             pkl=dirlist.pop(i) 
-    with open(os.path.join(track_path, pkl), 'rb') as file:
+    with open(os.path.join(track_root, pkl), 'rb') as file:
         info = pickle.load(file)
     vis = o3d.visualization.Visualizer()
     # vis.get_render_option().background_color = np.asarray([0, 0, 0])
     
     for t in dirlist:
-        track[t] = []
-        tpath = os.path.join(track_path, t)
+        track_path[t] = []
+        tpath = os.path.join(track_root, t)
         frame_num = (int(sorted(os.listdir(tpath))[-1][:6])+1)  
         for f in range(frame_num):            
             pcd_path=os.path.join(tpath, str(f).zfill(6)+'_dense_points.txt')
-            track[t].append(pcd_path)
+            track_path[t].append(pcd_path)
         # one track only
         break
     
-    VOXEL_SIZE = 1.0
+    VOXEL_SIZE = 1
     DENSITY = 100
     NUM_SAMPLES = int((VOXEL_SIZE**3)*DENSITY)
-    PDF_FLAG=True    
+    PDF_FLAG=False    
     MIN_PTS_VOXEL = 1
-    for i, tid in enumerate(track):
+    track_buffer = {}
+    
+    for ti, tid in enumerate(track_path):
         t_info = info[tid]
-        frames = track[tid]
+        frames = track_path[tid]
+        track_buffer[tid] = []
         l=[]  
         allpts=[]
         for fi, f in enumerate(frames):
-            if(fi!=7):
-                continue
+            if(fi>10):
+                break
             pcd = read_vis_points(f)
-            vis.create_window()
             bbox = t_info[fi]['obj']['box3d']
-            bbox['x'],bbox['y'],bbox['z'] = 0,0,0
-            
-            voxel = voxelize(pcd,bbox,VOXEL_SIZE,overlap=True)
-
-            drawbox(vis,bbox,color = [1,0,0])
+            valid_voxel, invalid_voxel = voxelize(pcd, copy.deepcopy(bbox), VOXEL_SIZE, overlap=True, min_pts = MIN_PTS_VOXEL)
+            track_buffer[tid].append({'voxel':valid_voxel,'bbox':bbox})
+            # vis.create_window()
+            # drawbox(vis,bbox,color = [1,0,0])
             p_mean = []
             pts = []
             pdf = []
-            non_empty = 0
             global_neg_log_psi=0
             global_ndt_score = 0 
-            for vi,v in enumerate(voxel):
+            for vi,v in enumerate(valid_voxel):
                 # drawbox(vis,v)
-                if(len(v["pts"]) > 0):
-                    pts += v["pts"].tolist()
-                if(len(v["pts"]) > MIN_PTS_VOXEL and v['mean'] is not None):
-                    p_mean.append(v['mean'])  
-                    non_empty+=1
-                    #random sample     
-                    if(PDF_FLAG):
-                        samples = np.random.multivariate_normal(v['mean'], v['cov'], NUM_SAMPLES)
-                        pdf.append(samples.tolist())       
-                        mvn = scipy.stats.multivariate_normal(mean=v['mean'], cov=v['cov'], allow_singular=True)
-                        mvn_sample = mvn.pdf(samples)
-                        neg_log_psi = -np.average(np.log(mvn_sample))
-                        ndt_score = -np.average(mvn_sample)  
-                        global_neg_log_psi+=neg_log_psi
-                        global_ndt_score+=ndt_score
-                         
-                        print(f"NDT score: {ndt_score}, Neg log psi: {neg_log_psi}") 
+                p_mean.append(v['mean'])  
+                #random sample     
+                if(PDF_FLAG):
+                    samples = np.random.multivariate_normal(v['mean'], v['cov'], NUM_SAMPLES)
+                    pdf.append(samples.tolist())       
+                    mvn = scipy.stats.multivariate_normal(mean=v['mean'], cov=v['cov'], allow_singular=True)
+                    mvn_sample = mvn.pdf(samples)
+                    neg_log_psi = -np.average(np.log(mvn_sample))
+                    ndt_score = -np.average(mvn_sample)  
+                    global_neg_log_psi += neg_log_psi
+                    global_ndt_score += ndt_score                         
             allpts+=p_mean 
             if(PDF_FLAG):                      
                 pdf = np.array(pdf).reshape(-1,3) 
-                print(f"Sample {NUM_SAMPLES} points per voxel. {non_empty}/{len(voxel)} voxels are non-empty.")
+                print(f"Sample {NUM_SAMPLES} points per voxel. {len(valid_voxel)}/{len(invalid_voxel) + len(valid_voxel)} voxels are valid.")
                 print(pdf.shape)
                 print(f"NDT score: {global_ndt_score}, Neg log psi: {global_neg_log_psi}")
-            p = o3d.geometry.PointCloud()            
-            p.points = o3d.utility.Vector3dVector(pdf)
-            vis.add_geometry(p)
-            vis.run()
-            vis.destroy_window()
-        # print(len(allpts))
-        # exit()
-        
-        vis.create_window()
-        p = o3d.geometry.PointCloud()
-        p.points = o3d.utility.Vector3dVector(allpts)
-        vis.add_geometry(p)
-        vis.run()
-        vis.destroy_window()
+                p = o3d.geometry.PointCloud()            
+                p.points = o3d.utility.Vector3dVector(pdf)
+                vis.add_geometry(p)
+                vis.run()
+                vis.destroy_window()        
+        # vis.create_window()
+        # p = o3d.geometry.PointCloud()
+        # p.points = o3d.utility.Vector3dVector(allpts)
+        # vis.add_geometry(p)
+        # vis.run()
+        # vis.destroy_window()
+    for ti, tid in enumerate(track_path):
+        buf = track_buffer[tid]
+        ref = buf[7]
+        for fi in range(len(buf)):
+            NDT_score(buf[fi],ref)
+            NDT_score(ref,buf[fi])
+            exit()
 
-        
-    # pdb.set_trace()
-    # exit()
 
-def voxelize(pcd, box, voxel_size=0.3, overlap=True):
+
+def voxelize(pcd, box, voxel_size=0.3, overlap=True, min_pts = 1):
+    box['x'],box['y'],box['z'] = 0,0,0
     l, w, h = box['l'], box['w'], box['h']
     voxel = []    
     origin = 0
@@ -146,23 +146,59 @@ def voxelize(pcd, box, voxel_size=0.3, overlap=True):
                            
     assert incnt == scalar*len(pcd)
     # #statistic
+    valid_voxel = []
+    invalid_voxel = []
     for vi,v in enumerate(voxel):     
         v["pts"] = np.array(v["pts"])          
-        if(len(v["pts"]) > 1):
+        if(len(v["pts"]) > min_pts):
             v['mean'] = np.mean(v["pts"],0)
-            v['var'] =  np.var(v["pts"],0)
             v['cov'] = adjust_covariance_eigenvalues(np.cov(v["pts"],rowvar=False))
             v['cov_inv'] = np.linalg.pinv(v['cov']) 
-            assert np.linalg.det(v['cov']) > 0
+            v['NDTpdf'] = PDF(v['mean'], v['cov'], voxel_size)
+            v['pdf'] = scipy.stats.multivariate_normal(mean=v['mean'], cov=v['cov'], allow_singular=True).pdf
+            valid_voxel.append(v)
         else:
-            v['mean'] = None
-            v['var'] =  None
-            v['cov'] = None
-            v['cov_inv'] = None
-    return voxel
+            invalid_voxel.append(v)
+    return valid_voxel, invalid_voxel
 
+def NDT_score(a, b):
+    # a['voxel']
+    pairs = []
+    for i in range(len(a['voxel'])):
+        min_dist = float('inf')
+        closest_index = None
+        pa = a['voxel'][i]
+        for j in range(len(b['voxel'])):
+            pb = b['voxel'][j]
+            dist = (pa['x']-pb['x'])**2 + (pa['y']-pb['y'])**2 + (pa['z']-pb['z'])**2
+            if dist < min_dist:
+                min_dist = dist
+                closest_index = j  
+        pairs.append((i,closest_index))
+    
+    for (i,j) in pairs:
+        NDT_voxel_score(a['voxel'][i],b['voxel'][j])
+    return
+def NDT_voxel_score(a, b):
+    pdf_scores = b['pdf'](a['pts'])
+    print(pdf_scores)
+    
+    pdf_scores = b['NDTpdf'].pdf(a['pts'])
+    print(pdf_scores)
 
-               
+    exit()
+    
+    
+    neg_log_psi = -np.average(np.log(pdf_scores))
+    ndt_score = -np.average(pdf_scores)
+    exit()
+    # b['NDTpdf']
+    # mvn = scipy.stats.multivariate_normal(mean=v['mean'], cov=v['cov'], allow_singular=True)
+    # mvn_sample = mvn.pdf(samples)
+      
+    # global_neg_log_psi += neg_log_psi
+    # global_ndt_score += ndt_score 
+        
 def read_vis_points(pcd_path):
     arr=[]
     with open(pcd_path, 'r') as file:
@@ -207,27 +243,22 @@ def in_bbox(point, bbox):
     return (x >= x_min) & (x <= x_max) & (y >= y_min) & (y <= y_max) & (z >= z_min) & (z <= z_max)
 
 def adjust_covariance_eigenvalues(covariance_matrix):
-    # 計算協方差矩陣的特征值和特征向量
     # return covariance_matrix
     eigenvalues, eigenvectors = np.linalg.eig(covariance_matrix)
-    
-    # 將最小特征值調整為最大特征值的 0.001 倍
+
     min_eigenvalue = np.min(eigenvalues)
     max_eigenvalue = np.max(eigenvalues)
     if min_eigenvalue < 0.001 * max_eigenvalue:
         min_eigenvalue = 0.001 * max_eigenvalue
     else: 
-        return covariance_matrix
-    
-    # 構造調整後的對角矩陣
-        
+        return covariance_matrix        
     
     adjusted_eigenvalues = np.diag(np.maximum(eigenvalues, min_eigenvalue))
-    # 重新構造調整後的協方差矩陣
     adjusted_covariance_matrix = np.dot(np.dot(eigenvectors, adjusted_eigenvalues), np.linalg.inv(eigenvectors))
     
     return adjusted_covariance_matrix
 
+        
 if __name__ == '__main__':
     test()   
  
