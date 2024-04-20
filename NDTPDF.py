@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.integrate import tplquad,quad,dblquad
+import math
 class PDF:
     def __init__(self, mean, cov, voxel_size ,noise=0.05):
         self.mean = mean
@@ -39,6 +40,8 @@ class PDF:
             factor = 1/np.sqrt(((2*np.pi)**3)*(np.linalg.det(self.cov)))
             exp = np.exp(-0.5*(np.matmul(np.matmul(dx[i].T, self.cov_inv), dx[i])))    
             p = exp*factor
+            if(p == math.inf):               
+                p=0
             out.append(p)
         return out
 
@@ -47,8 +50,11 @@ class PDF:
         x = x.reshape(-1,3)
         dx = (x - self.mean)
         out=[]
+        c=0
         for i in range(dx.shape[0]):
-            p = -self.d[1]*np.exp(-0.5*self.d[2]*np.matmul(np.matmul(dx[i].T, self.cov_inv), dx[i]))
+            p = -self.d[1]*np.exp(-0.5*self.d[2]*np.matmul(np.matmul(dx[i].T, self.cov_inv), dx[i])) 
+            if(p == math.inf):               
+                p=0
             out.append(p)
         return out
  

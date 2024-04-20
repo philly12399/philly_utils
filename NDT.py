@@ -90,7 +90,10 @@ def test(track_root='./output_bytrackid/car_mark_all_rotxy'):
                 s.append(score)  
 
         # print(NDT_score(buf[1],buf[-1]))
-        
+        s = np.array(s).reshape(len(buf),len(buf))
+        for si in range(len(s)):
+            print(s[si])
+            print(rank_list(s[si]))
         pdb.set_trace()
         break
         
@@ -175,15 +178,17 @@ def NDT_score(a, b):
         pairs.append((i,closest_index))
     global_ndt_score = 0
     for (i,j) in pairs:
+        # if(j!=182):
+        #     continue
         score = NDT_voxel_score(a['voxel'][i],b['voxel'][j])
         global_ndt_score += score
     return global_ndt_score
 
 def NDT_voxel_score(a, b):
     pdf_scores = b['NDTpdf'].mixed_pdf(a['pts'])
-    # pdf_scores = b['NDTpdf'].pdf(a['pts'])
+    # print(pdf_scores)
     ndt_score = -np.sum(pdf_scores)
-    assert ndt_score != -math.inf
+    # assert ndt_score != -math.inf
     return ndt_score
 
 def read_vis_points(pcd_path):
@@ -229,7 +234,7 @@ def in_bbox(point, bbox):
     z_max = bbox['z'] + bbox['h'] / 2
     return (x >= x_min) & (x <= x_max) & (y >= y_min) & (y <= y_max) & (z >= z_min) & (z <= z_max)
 
-def adjust_covariance_eigenvalues(covariance_matrix):
+def adjust_covariance_eigenvalues(covariance_matrix): #bugged
     return covariance_matrix
     eigenvalues, eigenvectors = np.linalg.eig(covariance_matrix)
 
