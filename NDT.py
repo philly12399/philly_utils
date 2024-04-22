@@ -84,30 +84,34 @@ def test(track_root='./output_bytrackid/car_mark_all_rotxy'):
         # vis.destroy_window() 
         v0,_,_ = voxelize(allpts, track_buffer[tid][rep[ti]]['bbox'], VOXEL_SIZE, overlap=True, min_pts = MIN_PTS_VOXEL)
         voxel_of_track[tid] = v0
-        
-    ### in same track, with mean of voxel
-    for ti, tid in enumerate(track_path):   
-        buf = track_buffer[tid] 
-        s=[]
-        for fi,f in enumerate(buf):
-            score = NDT_score(f,{'voxel':v0,'bbox':buf[rep[ti]]['bbox']})
-            s.append(score)
-        print(s)
-        pdb.set_trace()
-        # trackbuf.append(track_buffer[tid][rep[ti]])
-    exit()
-    ###different track 
-    s=[]
-    for fi in range(len(trackbuf)): 
-        for fj in range(len(trackbuf)): 
-            score = NDT_score(trackbuf[fi],trackbuf[fj])
-            s.append(score)  
-    s = np.array(s).reshape(len(trackbuf),len(trackbuf))
-    for si in range(len(s)):
-        print(s[si])
-        print(rank_list(s[si]))
-    pdb.set_trace()
-    exit()
+    
+    
+    
+    
+    
+    # ### in same track, with mean of voxel
+    # for ti, tid in enumerate(track_path):   
+    #     buf = track_buffer[tid] 
+    #     s=[]
+    #     for fi,f in enumerate(buf):
+    #         score = NDT_score(f,{'voxel':v0,'bbox':buf[rep[ti]]['bbox']})
+    #         s.append(score)
+    #     print(s)
+    #     pdb.set_trace()
+    #     # trackbuf.append(track_buffer[tid][rep[ti]])
+    # exit()
+    # ###different track 
+    # s=[]
+    # for fi in range(len(trackbuf)): 
+    #     for fj in range(len(trackbuf)): 
+    #         score = NDT_score(trackbuf[fi],trackbuf[fj])
+    #         s.append(score)  
+    # s = np.array(s).reshape(len(trackbuf),len(trackbuf))
+    # for si in range(len(s)):
+    #     print(s[si])
+    #     print(rank_list(s[si]))
+    # pdb.set_trace()
+    # exit()
     
     ###in same track
     for ti, tid in enumerate(track_path):
@@ -120,6 +124,8 @@ def test(track_root='./output_bytrackid/car_mark_all_rotxy'):
                 score = NDT_score(buf[fi],ref)
                 # print(score)
                 s.append(score)  
+            print(f"frame {fi}")
+            print(s)
         # print(NDT_score(buf[1],buf[-1]))
 
         # s = np.array(s).reshape(len(buf),len(buf))
@@ -227,7 +233,21 @@ def NDT_voxel_score(a, b, mixed_pdf=True):
     else:
         pdf_scores = b['NDTpdf'].pdf(a['pts'])
     ndt_score = -np.sum(pdf_scores)
+    mean_scores = np.mean(pdf_scores)
+    
     return ndt_score
+
+def NDT_voxel_CE(a, b, mixed_pdf=True):
+    samples = np.random.multivariate_normal(a['mean'], a['cov'], 300)
+    if(mixed_pdf):
+        pdf_scores = b['NDTpdf'].mixed_pdf(samples)
+    else:
+        pdf_scores = b['NDTpdf'].pdf(samples)
+    mean_scores = np.mean(pdf_scores)
+    volume = np.linalg.det(b['cov']) ** 0.5  # 這裡假設積分範圍的體積為第一個分佈的協方差矩陣的行列式的平方根
+    cross_entropy = -mean_scores * volume
+    return np.sum(cross_entropy)
+
 
 def read_vis_points(pcd_path):
     arr=[]
