@@ -112,7 +112,7 @@ def create_groundtruth_database_kitti_detect(kitti_path, out_path, num, draw, cl
                     pl.draw_point(p)           
                 pl.show1()
                 
-    with open(os.path.join(out_path, "kitti_dbinfos_train.pkl"), 'wb') as file:
+    with open(os.path.join(out_path, "info.pkl"), 'wb') as file:
         pickle.dump(data_info, file)
     print(f"Extract {len(data_info)} object in {num} pcd and output to {os.path.join(out_path,'gt_database')}")
         
@@ -130,9 +130,9 @@ def create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, cle
     
     #Filter
     OCC_FILTER=[0,1,2,3]
-    CLASS_FILTER=['car']
+    CLASS_FILTER=['car','cyclist','truck']
     MIN_POINTS=32
-    
+    MIN_POINTS_FLAG=False
     print(f"With occlusion filter {OCC_FILTER}, class filter {CLASS_FILTER}")       
     skipcnt=0
     for s in seqlist:
@@ -157,7 +157,7 @@ def create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, cle
             class_cnt={}
             fid = l[:-4]
             points =  np.fromfile(os.path.join(velodyne_path, fid+".bin"), dtype=np.float32).reshape(-1,4)
-            for obj in objs_frame[i]:
+            for oid,obj in enumerate(objs_frame[i]):
                 if(not obj.obj_type in CLASS_FILTER):
                     continue
                 if(not obj.occlusion in OCC_FILTER):
@@ -171,14 +171,15 @@ def create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, cle
                 file_name = f"{fid}_{obj.obj_type}_{class_cnt[obj.obj_type]}_track_{obj.track_id}_occ_{obj.occlusion}.bin"
                 in_points_flag = kitti_utils.points_in_box(points[:,:3], obj.box3d)      
                 points_in_box = points[in_points_flag]  
-                if(points_in_box.shape[0] < MIN_POINTS):   
+                if(MIN_POINTS_FLAG and points_in_box.shape[0] < MIN_POINTS):   
                     skipcnt+=1
+                    # data_info.append(get_info(obj, point_num, fid, file_name,i,oid))
                     continue
                 center = np.array([obj.box3d['x'], obj.box3d['y'], obj.box3d['z']] )
                 points_in_box[:, :3] -= center
                 points_in_box.tofile(os.path.join(db_path,file_name))
                 point_num = points_in_box.shape[0]
-                data_info.append(get_info(obj, point_num, fid, file_name,i))
+                data_info.append(get_info(obj, point_num, fid, file_name,i,oid))
                 if(draw):
                     pl=plot.Plot()
                     pl.name(file_name[:-4])
@@ -192,12 +193,12 @@ def create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, cle
     with open(os.path.join(out_path, "info.pkl"), 'wb') as file:
         pickle.dump(all_data_info, file)
    
-def get_info(obj, point_num, fid, file_name,i):    
+def get_info(obj, point_num, fid, file_name,i,objid):    
     obj1 = deepcopy(obj.__dict__)
     obj1.pop('src')    
     obj1['box3d'].pop('corners_3d_cam')
     obj1['box3d'].pop('corners_org')
-    info = {'obj':obj1, 'num_points_in_gt':point_num, 'velodyne_idx':fid, 'path':file_name,'gt_idx': i}
+    info = {'obj':obj1, 'num_points_in_gt':point_num, 'velodyne_idx':fid, 'path':file_name,'gt_idx': i, 'obj_det_idx':objid}
     return(info)
 
 def read_txt_file(file_path):

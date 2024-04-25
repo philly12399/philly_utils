@@ -100,7 +100,7 @@ def pack_data_fromdb(binpath, outpath, cls='car'): #create gt db to shapenet for
         os.system(f"cp {a} {b}")
     with open(os.path.join(outpath2, f'test.txt'), 'w') as file:
         file.write(buffer)
-    os.system(f"cp {datapath}/info.pkl {outpath2}/test.pkl")
+    os.system(f"cp {datapath}/info.pkl {outpath2}/info.pkl")
     
 def pack_data_fromvis(vispath, outpath): #pointmae vis to shapenet format
     vispath = os.path.join(vispath, 'vis')
