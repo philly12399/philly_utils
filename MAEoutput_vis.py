@@ -22,16 +22,20 @@ import sys
 def visualize(index,num):
     # 修改此處改變路徑
     # VIS_PATH=['./point_mae/output/car/car_rand_0.9_occall','./point_mae/output/cyclist_rand_0.9_occall']
-    VIS_PATH=['./vis','/home/philly12399/thesis/philly_utils/point_mae/output/car/rand_0.9_occ0_2']
+    prefix = './tmp/mask_ratio_exp/'
+    suffix = 'vis/0004'
+    VIS_PATH=['vis_0.3_64','vis_0.6_64','vis_0.9_64']
+    VIS_PATH[index] = os.path.join(prefix,VIS_PATH[index],suffix)
     visualize_inner(VIS_PATH[index],index,num)
     
 def visualize_inner(path,index,num):
-    path = os.path.join(path, 'vis')
+    # path = os.path.join(path, 'vis_0.3/vis/0004/')
     # os.system(f'mkdir -p {out}')
     # split = ['gt.txt', 'dense_points.txt','center.txt','vis.txt']
 
     # split =['mask.txt','voxelmask.txt']
-    split =['mask.txt','dense_points.txt']
+    split =['dense_points.txt']
+    # split=['gt.txt']
     
     for i,f in enumerate(sorted(os.listdir(path))):
         if(num>=0 and i>=num):
@@ -45,7 +49,9 @@ def visualize_inner(path,index,num):
                 for d in data:
                     d = d.replace('\n','').split(';')
                     arr.append([float(d[0]), float(d[1]), float(d[2])])
+            unarr = np.unique(np.array(arr), axis=0)
             
+            print(len(unarr))
             # with open(os.path.join(path1, 'mask.txt'), 'r') as file:
             #     data = file.readlines()
             #     for d in data:
@@ -55,13 +61,9 @@ def visualize_inner(path,index,num):
 
             pcd = o3d.geometry.PointCloud()
             pcd.points = o3d.utility.Vector3dVector(arr)
-            
-            if(path[-1]=='/'):
-                pathn = path.split('/')[-2]
-            else:
-                pathn = path.split('/')[-1]
-            window_name = f"{pathn}_{i}_{s}"
-            
+
+            # window_name = f"{pathn}_{i}_{s}"
+            window_name =  f"{f}_{s}"
             o3d.visualization.draw_geometries([pcd,], width=800, height=500,window_name=window_name,left=900*index,top=0)
 
         
