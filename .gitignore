@@ -3,3 +3,4 @@
 *.bin
 output/
 __pycache__/
+data/*

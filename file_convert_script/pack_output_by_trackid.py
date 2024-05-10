@@ -5,7 +5,7 @@ import click
 import sys
 import pickle
 from tqdm import tqdm
-CLASS='car'
+CLASS='test'
 
 @click.command()
 ### Add your options herea
