@@ -2,6 +2,7 @@ import os
 import sys
 import click
 import json
+#把多個kittidetect label file merge成一個kittitrack label
 @click.command()
 ### Add your options here
 @click.option(
@@ -15,16 +16,23 @@ import json
     "--outpath",
     "-o",
     type=str,
-    default="/home/philly12399/philly_data/sv_out/",
+    default="/home/philly12399/philly_data/KT_output/",
     help="Path of output",
 )
 
-def main(inpath, outpath):
-    merge_dets(inpath, outpath)
+@click.option(
+    "--exp",
+    "-e",
+    type=str,
+    default="label.txt",
+    help="Path of output",
+)
+def main(inpath, outpath, exp):
+    merge_dets(inpath, outpath,exp)
 
 
 # merge kitti track label {i}.txt in same sequence to one label.txt
-def merge_dets(inpath, outpath):
+def merge_dets(inpath, outpath, exp):
     indir=sorted(os.listdir(inpath))
     dets={}
     merged=""
@@ -37,7 +45,7 @@ def merge_dets(inpath, outpath):
                 buf+=s
         f += 1
     os.system("mkdir -p {}".format(outpath))
-    outfile = open(os.path.join(outpath,"label.txt"), "w")
+    outfile = open(os.path.join(outpath, exp), "w")
     outfile.write(buf)
     outfile.close()
 
