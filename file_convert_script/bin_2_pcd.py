@@ -29,6 +29,9 @@ import open3d as o3d
     help="convert number",
 )
 
+def convert_click(binfolder, pcdfolder, convert_number):
+    convert(binfolder, pcdfolder, convert_number)
+               
 def convert(binfolder, pcdfolder, convert_number):
     if(convert_number == -1):
         convert_number = 99999999
@@ -57,7 +60,8 @@ def convert(binfolder, pcdfolder, convert_number):
             o3d_pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(points))
 
             # Save to whatever format you like
-            o3d.io.write_point_cloud(velodyne_file_new, o3d_pcd,write_ascii=True)            
+            o3d.io.write_point_cloud(velodyne_file_new, o3d_pcd,write_ascii=True)   
+
 def check(binfolder, pcdfolder, convert_number):
     if(convert_number == -1):
         convert_number = 99999999
@@ -84,4 +88,4 @@ def check(binfolder, pcdfolder, convert_number):
 
 
 if __name__ == "__main__":
-    convert()
+    convert_click()
