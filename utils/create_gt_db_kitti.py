@@ -17,6 +17,13 @@ from copy import deepcopy
     help="Path of kitti",
 )
 @click.option(
+    "--label",
+    "-l",
+    type=str,
+    default="",
+    help="Path of label",
+)
+@click.option(
     "--out_path",
     "-o",
     type=str,
@@ -51,16 +58,16 @@ from copy import deepcopy
     default=False,
     help="clean output or not",
 )
-def create_groundtruth_database(kitti_path, out_path, mode, num, draw, clean):
+def create_groundtruth_database(kitti_path,label, out_path, mode, num, draw, clean):
     if(mode == "detect"):
-        create_groundtruth_database_kitti_detect(kitti_path, out_path, num, draw, clean)
+        create_groundtruth_database_kitti_detect(kitti_path,label, out_path, num, draw, clean)
     elif(mode == "track"):
-        SEQ=[]
-        create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, clean,seqlist=SEQ)
+        SEQ=[0,1]
+        create_groundtruth_database_kitti_track(kitti_path,label, out_path, num, draw, clean,seqlist=SEQ)
     else:
         print("Please input correct mode, track or detect")
     
-def create_groundtruth_database_kitti_detect(kitti_path, out_path, num, draw, clean):
+def create_groundtruth_database_kitti_detect(kitti_path, label_path0, out_path, num, draw, clean):
     print(f"Create database from kitti detect format")        
     
     if clean and os.path.exists(out_path):
@@ -116,7 +123,7 @@ def create_groundtruth_database_kitti_detect(kitti_path, out_path, num, draw, cl
         pickle.dump(data_info, file)
     print(f"Extract {len(data_info)} object in {num} pcd and output to {os.path.join(out_path,'gt_database')}")
         
-def create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, clean, seqlist=[]):
+def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, num, draw, clean, seqlist=[]):
     print(f"Create database from kitti track format")     
        
     if clean and os.path.exists(out_path):
@@ -130,14 +137,17 @@ def create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, cle
     
     #Filter
     OCC_FILTER=[0,1,2,3]
-    CLASS_FILTER=['car','cyclist','truck']
+    CLASS_FILTER=['car','cyclist']
     MIN_POINTS=32
     MIN_POINTS_FLAG=False
     print(f"With occlusion filter {OCC_FILTER}, class filter {CLASS_FILTER}")       
     skipcnt=0
     for s in seqlist:
         seq = str(s).zfill(4)
-        label_path = os.path.join(kitti_path, "label_02",f"{seq}.txt")
+        if(label_path0 != ""):
+            label_path = os.path.join(label_path0, f"{seq}.txt")            
+        else:
+            label_path = os.path.join(kitti_path, "label_02",f"{seq}.txt")
         velodyne_path = os.path.join(kitti_path, "velodyne",seq)
         calib_path = os.path.join(kitti_path, "calib",f"{seq}.txt")
         db_path = os.path.join(out_path, "gt_database",seq)
@@ -158,7 +168,7 @@ def create_groundtruth_database_kitti_track(kitti_path, out_path, num, draw, cle
             fid = l[:-4]
             points =  np.fromfile(os.path.join(velodyne_path, fid+".bin"), dtype=np.float32).reshape(-1,4)
             for oid,obj in enumerate(objs_frame[i]):
-                if(not obj.obj_type in CLASS_FILTER):
+                if(not obj.obj_type.lower() in CLASS_FILTER):
                     continue
                 if(not obj.occlusion in OCC_FILTER):
                     continue
