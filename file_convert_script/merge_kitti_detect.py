@@ -2,6 +2,7 @@ import os
 import sys
 import click
 import json
+#把多個kittidetect label file merge成一個kittitrack label
 @click.command()
 ### Add your options here
 @click.option(
