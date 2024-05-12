@@ -3,7 +3,7 @@ import open3d as o3d
 import os
 
 np.set_printoptions(suppress=True) # 取消默认科学计数法，open3d无法读取科学计数法表示
-parent = './KITTI_track_train/velodyne/0004'
+parent = '../data/KITTI_DB/gt_database/0001'
 vis = o3d.visualization.Visualizer()
 vis.create_window()
 for di in sorted(os.listdir(parent)):

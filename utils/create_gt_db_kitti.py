@@ -148,6 +148,7 @@ def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, n
             label_path = os.path.join(label_path0, f"{seq}.txt")            
         else:
             label_path = os.path.join(kitti_path, "label_02",f"{seq}.txt")
+        print(label_path)
         velodyne_path = os.path.join(kitti_path, "velodyne",seq)
         calib_path = os.path.join(kitti_path, "calib",f"{seq}.txt")
         db_path = os.path.join(out_path, "gt_database",seq)

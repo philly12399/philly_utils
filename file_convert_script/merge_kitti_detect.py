@@ -37,6 +37,8 @@ def merge_dets(inpath, outpath,exp):
     merged=""
     f=0
     buf=""
+    print(f"merge {inpath} to {outpath}/{exp}.txt")
+    
     for i in indir:
         with open(os.path.join(inpath,i)) as fp:
             for line in fp:

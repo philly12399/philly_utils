@@ -2,6 +2,7 @@ import json5
 import json
 import sys
 import os
+# 把KITTI TRACK seq餵給detector,改動json5檔案
 if __name__ == "__main__":
 
     with open('pcd-detect-kitti.json5', 'r') as file:
