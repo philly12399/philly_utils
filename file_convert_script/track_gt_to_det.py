@@ -27,12 +27,9 @@ import click
 )
 def main(gt_path,format,out_path):
     os.system(f"mkdir -p {out_path}")
-    
-    for s in sorted(os.listdir(gt_path)):
-        if(s=="0021.txt"):
-            convert(gt_path,s,'wayside',out_path)
-        else:            
-            convert(gt_path,s,'kitti',out_path)
+    # convert(gt_path,"0021.txt",'wayside',out_path)
+    for s in sorted(os.listdir(gt_path)):          
+        convert(gt_path,s,'kitti',out_path)
             
 def convert(gt_path,filename,format,output):
     file_path = os.path.join(gt_path,filename)
