@@ -21,7 +21,7 @@ import click
     "--out_path",
     "-o",
     type=str,
-    default="/home/philly12399/philly_data/KITTI_tracking/training/label_gt_det/",
+    default="/home/philly12399/philly_data/KITTI_tracking/training/label_gt_det_occ0_occ1/",
     # default="/home/philly12399/philly_data/KITTI_tracking/training/label_gt/",    
     help="Path of output.",
 )
@@ -36,17 +36,20 @@ def convert(gt_path,filename,format,output):
     output = os.path.join(output,filename)
     buffer = ""
     print(f"convert {file_path} to {output} with format {format}") 
-    
+    OCC_FILTER={2,3}
     with open(file_path, "r") as f:
         for line in f:
             x = line.strip().split(' ')
+            trunc=int(x[3])                
+            occ=int(x[4])
+            if(occ in OCC_FILTER):
+                continue
             if format.lower() == "kitti":
                 cls2id={'car':2,'cyclist':3}
                 neighbor = {'van':'car','truck':'car'}
                 x[2] = x[2].lower()
                 if(x[2] in neighbor): x[2] = neighbor[x[2]]
-                if(x[2] not in cls2id): continue
-                
+                if(x[2] not in cls2id): continue                
                 frame=x[0]
                 clsid = cls2id[x[2]]
                 bbox2d=f"{x[6]},{x[7]},{x[8]},{x[9]}"
