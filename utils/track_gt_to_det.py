@@ -80,35 +80,20 @@ def convert(gt_path,filename,format,output, OCC_FILTER={}, birth_buf=0, death_bu
                 x[2] = x[2].lower()
                 if(x[2] in neighbor): x[2] = neighbor[x[2]]
                 if(x[2] not in cls2id): continue                    
-                
-                if(tid not in data_by_trackid):
-                    data_by_trackid[tid]=[]   
-                              
-                frame=x[0]
-                clsid = cls2id[x[2]]
-                bbox2d=f"{x[6]},{x[7]},{x[8]},{x[9]}"
-                bbox3d=f"{x[10]},{x[11]},{x[12]},{x[13]},{x[14]},{x[15]},{x[16]}"
-                alpha = x[5]
-                score=1.0                
-                det = f"{frame},{clsid},{bbox2d},{score},{bbox3d},{x[5]}\n"
-                filtbuf = f"{frame},{-1},{bbox2d},{score},{bbox3d},{x[5]}\n"
-            elif format == "wayside":
-                tid=int(x[1])
-                if(tid not in data_by_trackid):
-                    data_by_trackid[tid]=[]
-                x[1] = -1 #track_id
-                # x[3],x[4],x[5] = 0, 0, 0.0 #truncated,occluded,alpha
-                det= ""
-                for xi in x:
-                    det+=f"{str(xi)} "
-                det+="1.0\n" #score
-                filtbuf=""
-                x[2] = "Filtered"
-                for xi in x:
-                    filtbuf+=f"{str(xi)} "
-                filtbuf+="1.0\n" #score
-            else:
-                assert False 
+                x[2] = x[2].capitalize()
+            tid=int(x[1])
+            if(tid not in data_by_trackid):
+                data_by_trackid[tid]=[]
+            x[1] = -1 
+            det= ""
+            for xi in x:
+                det+=f"{str(xi)} "
+            det+="1.0\n" #score
+            filtbuf=""
+            x[2] = "Filtered"
+            for xi in x:
+                filtbuf+=f"{str(xi)} "
+            filtbuf+="1.0\n" #score
             data_by_trackid[tid].append({'i':fi, 'trunc':trunc,'occ':occ,'buf':det,'filtbuf':filtbuf})
     filted_data=[]
     filt_cnt=0
