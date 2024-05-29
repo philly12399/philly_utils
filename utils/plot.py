@@ -84,10 +84,14 @@ class Plot():
 
 
 def draw_pcd_and_bbox(pcd, box):  
+    pcd = pcd[:,:3]
+    
     p= o3d.geometry.PointCloud()
     p.points = o3d.utility.Vector3dVector(pcd)
     b = o3d.geometry.OrientedBoundingBox()
     b.center = [0,0,0]
+    # b.center = [box['x'],box['y'],box['z']]
+    
     b.extent = [box['l'],box['w'],box['h']]
     R = o3d.geometry.OrientedBoundingBox.get_rotation_matrix_from_xyz((0, 0,box['roty']))
     b.rotate(R, b.center)

@@ -1,32 +1,20 @@
 import numpy as np
+from kitti_calib import Calibration
+import copy
 def get_calib_from_file(calib_file):
-    with open(calib_file) as f:
-        lines = f.readlines()
-
-    obj = lines[2].strip().split(' ')[1:]
-    P2 = np.array(obj, dtype=np.float32)
-    obj = lines[3].strip().split(' ')[1:]
-    P3 = np.array(obj, dtype=np.float32)
-    obj = lines[4].strip().split(' ')[1:]
-    R0 = np.array(obj, dtype=np.float32)
-    obj = lines[5].strip().split(' ')[1:]
-    Tr_velo_to_cam = np.array(obj, dtype=np.float32)
-
-    return {'P2': P2.reshape(3, 4),
-            'P3': P3.reshape(3, 4),
-            'R0': R0.reshape(3, 3),
-            'Tr_velo2cam': Tr_velo_to_cam.reshape(3, 4)}
+    return Calibration(calib_file)
     
-def get_objects_from_label(label_file, mode):
+def get_objects_from_label(label_file, mode, calib, dataset):
     with open(label_file, 'r') as f:
         lines = f.readlines()
-    objects = [Object3d(line, mode) for line in lines]
+    objects = [Object3d(line, mode, calib, dataset) for line in lines]
     return objects
 
 class Object3d(object):
-    def __init__(self, line, mode):
+    def __init__(self, line, mode, calib, dataset):
         label = line.strip().split(' ')
         self.src = line
+        self.dataset = dataset.lower()
         if(mode == "track"):
             self.frame_id = int(label[0])
             self.track_id = int(label[1])
@@ -36,8 +24,15 @@ class Object3d(object):
         self.occlusion = int(label[2])  # 0:fully visible 1:partly occluded 2:largely occluded 3:unknown
         self.alpha = float(label[3])
         self.box2d = {'x1': float(label[4]), 'y1': float(label[5]), 'x2': float(label[6]), 'y2': float(label[7])}
-        self.box3d = {'h': float(label[10]), 'w': float(label[9]), 'l': float(label[8]),\
+        self.box3d = {'h': float(label[8]), 'w': float(label[9]), 'l': float(label[10]),\
             'x':float(label[11]) ,'y':float(label[12]) ,'z':float(label[13]) , 'roty': float(label[14])}
+        if(dataset == "kitti"): #rect to velo
+            self.box3d = bbox_rect_to_velo(self.box3d, calib)
+        elif(dataset == "wayside"): #H,L互換
+            tmp = self.box3d['h'] 
+            self.box3d['h'] = self.box3d['l']
+            self.box3d['l'] = tmp
+        else: assert False
         self.score = float(label[15]) if label.__len__() == 16 else -1.0
 
     def to_str(self):
@@ -47,9 +42,8 @@ class Object3d(object):
         return print_str
 import plot
 import math
-
+import pdb
 def points_in_box(points, bbox):
-    bbox_rotz(bbox)
     center = np.array([bbox['x'], bbox['y'], bbox['z']])
     R = rotz(-bbox['roty'])
     # move to origin and rotate and move back
@@ -57,7 +51,18 @@ def points_in_box(points, bbox):
     in_points_flag = in_bbox(rot_points, bbox)
     return in_points_flag
 
+def bbox_rect_to_velo(bbox, calib):
+    center = np.array([bbox['x'], bbox['y'], bbox['z']])
+    center = calib.project_rect_to_velo(center.reshape(1,3)).reshape(3)
+    roty = calib.rect_to_velo_rot(bbox['roty'])
+    
+    bbox_velo = copy.copy(bbox)
+    bbox_velo['x'], bbox_velo['y'], bbox_velo['z'], bbox_velo['roty'] = center[0],center[1],center[2],roty
+    bbox_velo['z'] += bbox_velo['h']/2
+    return bbox_velo
+    
 def in_bbox(points, bbox):
+    bbox_rotz(bbox) # find 8 edge of bbox
     x = points[:, 0]
     y = points[:, 1]
     z = points[:, 2]
@@ -70,7 +75,7 @@ def in_bbox(points, bbox):
     return (x >= x_min) & (x <= x_max) & (y >= y_min) & (y <= y_max) & (z >= z_min) & (z <= z_max)
 
 
-def bbox_rotz(bbox):
+def bbox_rotz(bbox): # find 8 edge of bbox
     R = rotz(bbox['roty'])
     l, w, h = bbox['l'], bbox['w'], bbox['h']
     # 3d bounding box corners

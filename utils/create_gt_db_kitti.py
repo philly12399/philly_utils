@@ -13,7 +13,7 @@ from copy import deepcopy
     "--kitti_path",
     "-k",
     type=str,
-    default="./seq4",
+    default="../data/KITTI_tracking/training/",
     help="Path of kitti",
 )
 @click.option(
@@ -58,12 +58,13 @@ from copy import deepcopy
     default=False,
     help="clean output or not",
 )
+
 def create_groundtruth_database(kitti_path,label, out_path, mode, num, draw, clean):
     if(mode == "detect"):
         create_groundtruth_database_kitti_detect(kitti_path,label, out_path, num, draw, clean)
     elif(mode == "track"):
-        SEQ=[0,1]
-        create_groundtruth_database_kitti_track(kitti_path,label, out_path, num, draw, clean,seqlist=SEQ)
+        SEQ=[0]
+        create_groundtruth_database_kitti_track(kitti_path,label, out_path, num, draw, clean,seqlist=SEQ, dataset="kitti")
     else:
         print("Please input correct mode, track or detect")
     
@@ -123,7 +124,7 @@ def create_groundtruth_database_kitti_detect(kitti_path, label_path0, out_path, 
         pickle.dump(data_info, file)
     print(f"Extract {len(data_info)} object in {num} pcd and output to {os.path.join(out_path,'gt_database')}")
         
-def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, num, draw, clean, seqlist=[]):
+def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, num, draw, clean, seqlist=[], dataset="kitti"):
     print(f"Create database from kitti track format")     
        
     if clean and os.path.exists(out_path):
@@ -135,8 +136,8 @@ def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, n
         seqlist = sorted(os.listdir(os.path.join(kitti_path, "velodyne")))
     print(seqlist)
     
-    #Filter
-    OCC_FILTER=[0,1,2,3]
+    #Filter,if not in filter, drop
+    OCC_FILTER=[0,1,2,3] 
     CLASS_FILTER=['car','cyclist']
     MIN_POINTS=32
     MIN_POINTS_FLAG=False
@@ -156,11 +157,11 @@ def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, n
         calib = kitti_utils.get_calib_from_file(calib_path)
         file_list = sorted(os.listdir(velodyne_path))
         
-        objs = kitti_utils.get_objects_from_label(label_path, "track")
+        objs = kitti_utils.get_objects_from_label(label_path, "track", calib, dataset)
         objs_frame = [[] for i in range(len(file_list))]
         for o in objs:
             objs_frame[o.frame_id].append(o)    
-                    
+
         data_info=[] 
         for i,l in enumerate(tqdm(file_list)):
             if(num >=0 and i >= num):
@@ -179,7 +180,8 @@ def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, n
                 else:
                     class_cnt[obj.obj_type] += 1
                     
-                file_name = f"{fid}_{obj.obj_type}_{class_cnt[obj.obj_type]}_track_{obj.track_id}_occ_{obj.occlusion}.bin"
+                file_name = f"{fid}_{obj.obj_type}_{class_cnt[obj.obj_type]}.bin"    
+                # file_name = f"{fid}_{obj.obj_type}_{class_cnt[obj.obj_type]}_track_{obj.track_id}_occ_{obj.occlusion}.bin"
                 in_points_flag = kitti_utils.points_in_box(points[:,:3], obj.box3d)      
                 points_in_box = points[in_points_flag]  
                 if(MIN_POINTS_FLAG and points_in_box.shape[0] < MIN_POINTS):   
@@ -192,13 +194,7 @@ def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, n
                 point_num = points_in_box.shape[0]
                 data_info.append(get_info(obj, point_num, fid, file_name,i,oid))
                 if(draw):
-                    pl=plot.Plot()
-                    pl.name(file_name[:-4])
-                    # pl.draw_bbox_dict(obj.box3d)
-                    pl.draw_cube(obj.box3d['corners_3d_cam']-center)
-                    for p in points_in_box:
-                        pl.draw_point(p)           
-                    pl.show1()
+                    plot.draw_pcd_and_bbox(points_in_box,obj.box3d)
         print(f"Extract {len(data_info)} object and skip {skipcnt} low points object in {num} pcd and output to {db_path}")
         all_data_info[seq] = data_info       
     with open(os.path.join(out_path, "info.pkl"), 'wb') as file:
@@ -207,9 +203,13 @@ def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, n
 def get_info(obj, point_num, fid, file_name,i,objid):    
     obj1 = deepcopy(obj.__dict__)
     obj1.pop('src')    
-    obj1['box3d'].pop('corners_3d_cam')
-    obj1['box3d'].pop('corners_org')
+    try:
+        obj1['box3d'].pop('corners_3d_cam')
+        obj1['box3d'].pop('corners_org')
+    except:
+        pass
     info = {'obj':obj1, 'num_points_in_gt':point_num, 'velodyne_idx':fid, 'path':file_name,'gt_idx': i, 'obj_det_idx':objid}
+    # print(info)
     return(info)
 
 def read_txt_file(file_path):
