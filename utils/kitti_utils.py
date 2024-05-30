@@ -26,9 +26,9 @@ class Object3d(object):
         self.box2d = {'x1': float(label[4]), 'y1': float(label[5]), 'x2': float(label[6]), 'y2': float(label[7])}
         self.box3d = {'h': float(label[8]), 'w': float(label[9]), 'l': float(label[10]),\
             'x':float(label[11]) ,'y':float(label[12]) ,'z':float(label[13]) , 'roty': float(label[14])}
-        if(dataset == "kitti"): #rect to velo
+        if(self.dataset == "kitti"): #rect to velo
             self.box3d = bbox_rect_to_velo(self.box3d, calib)
-        elif(dataset == "wayside"): #H,L互換
+        elif(self.dataset == "wayside"): #H,L互換
             tmp = self.box3d['h'] 
             self.box3d['h'] = self.box3d['l']
             self.box3d['l'] = tmp
@@ -43,6 +43,7 @@ class Object3d(object):
 import plot
 import math
 import pdb
+
 def points_in_box(points, bbox):
     center = np.array([bbox['x'], bbox['y'], bbox['z']])
     R = rotz(-bbox['roty'])

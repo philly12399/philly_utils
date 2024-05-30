@@ -58,71 +58,24 @@ from copy import deepcopy
     default=False,
     help="clean output or not",
 )
+@click.option(
+    "--format",
+    "-f",
+    type=str,
+    default="kitti",
+    help="dataset format kitti/wayside",
+)
 
-def create_groundtruth_database(kitti_path,label, out_path, mode, num, draw, clean):
+def create_groundtruth_database(kitti_path,label, out_path, mode, num, draw, clean,format):
     if(mode == "detect"):
         create_groundtruth_database_kitti_detect(kitti_path,label, out_path, num, draw, clean)
     elif(mode == "track"):
-        SEQ=[0]
-        create_groundtruth_database_kitti_track(kitti_path,label, out_path, num, draw, clean,seqlist=SEQ, dataset="kitti")
+        # SEQ=list(range(0,21)) #kitti
+        SEQ=[21] # wayside
+        create_groundtruth_database_kitti_track(kitti_path,label, out_path, num, draw, clean,seqlist=SEQ, dataset=format)
     else:
         print("Please input correct mode, track or detect")
-    
-def create_groundtruth_database_kitti_detect(kitti_path, label_path0, out_path, num, draw, clean):
-    print(f"Create database from kitti detect format")        
-    
-    if clean and os.path.exists(out_path):
-        print(f"Remove {out_path} and create again")       
-        os.system("rm -r {}".format(out_path))
-    
-    label_path = os.path.join(kitti_path, "label_2")
-    velodyne_path = os.path.join(kitti_path, "velodyne")
-    calib_path = os.path.join(kitti_path, "calib")
-    db_path = os.path.join(out_path, "gt_database")
-    os.system(f"mkdir -p {db_path}")
-    
-    if(num<0):
-        num = len(os.listdir(label_path))
-    file_list = sorted(os.listdir(label_path))
-    
-    data_info=[]
-    for i,l in enumerate(tqdm(file_list)):
-        if(i >= num):
-            break
-        class_cnt={}
-        fid = l[:-4]
-        calib = kitti_utils.get_calib_from_file(os.path.join(calib_path, fid+".txt"))
-        objs = kitti_utils.get_objects_from_label(os.path.join(label_path, l), "detect")
-        points =  np.fromfile(os.path.join(velodyne_path, fid+".bin"), dtype=np.float32).reshape(-1,4)
-        
-        for obj in objs:
 
-            if(obj.obj_type not in class_cnt):
-                class_cnt[obj.obj_type] = 0
-            else:
-                class_cnt[obj.obj_type] += 1
-                
-            file_name = f"{fid}_{obj.obj_type}_{class_cnt[obj.obj_type]}.bin"
-            in_points_flag = kitti_utils.points_in_box(points[:,:3], obj.box3d)      
-            points_in_box = points[in_points_flag]     
-            center = np.array([obj.box3d['x'], obj.box3d['y'], obj.box3d['z']] )
-            points_in_box[:, :3] -= center
-            point_num = points_in_box.shape[0]            
-            points_in_box.tofile(os.path.join(db_path,file_name))
-            data_info.append(get_info(obj, point_num, fid, file_name,i))
-            
-            if(draw):
-                pl=plot.Plot()
-                pl.name(file_name[:-4])
-                # pl.draw_bbox_dict(obj.box3d)
-                pl.draw_cube(obj.box3d['corners_3d_cam']-center)
-                for p in points_in_box:
-                    pl.draw_point(p)           
-                pl.show1()
-                
-    with open(os.path.join(out_path, "info.pkl"), 'wb') as file:
-        pickle.dump(data_info, file)
-    print(f"Extract {len(data_info)} object in {num} pcd and output to {os.path.join(out_path,'gt_database')}")
         
 def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, num, draw, clean, seqlist=[], dataset="kitti"):
     print(f"Create database from kitti track format")     
@@ -194,6 +147,7 @@ def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, n
                 point_num = points_in_box.shape[0]
                 data_info.append(get_info(obj, point_num, fid, file_name,i,oid))
                 if(draw):
+                    obj.box3d['x'], obj.box3d['y'], obj.box3d['z'] = 0,0,0
                     plot.draw_pcd_and_bbox(points_in_box,obj.box3d)
         print(f"Extract {len(data_info)} object and skip {skipcnt} low points object in {num} pcd and output to {db_path}")
         all_data_info[seq] = data_info       
@@ -217,7 +171,62 @@ def read_txt_file(file_path):
         lines = file.readlines()
     return lines
 
+    
+def create_groundtruth_database_kitti_detect(kitti_path, label_path0, out_path, num, draw, clean):
+    print(f"Create database from kitti detect format")        
+    
+    if clean and os.path.exists(out_path):
+        print(f"Remove {out_path} and create again")       
+        os.system("rm -r {}".format(out_path))
+    
+    label_path = os.path.join(kitti_path, "label_2")
+    velodyne_path = os.path.join(kitti_path, "velodyne")
+    calib_path = os.path.join(kitti_path, "calib")
+    db_path = os.path.join(out_path, "gt_database")
+    os.system(f"mkdir -p {db_path}")
+    
+    if(num<0):
+        num = len(os.listdir(label_path))
+    file_list = sorted(os.listdir(label_path))
+    
+    data_info=[]
+    for i,l in enumerate(tqdm(file_list)):
+        if(i >= num):
+            break
+        class_cnt={}
+        fid = l[:-4]
+        calib = kitti_utils.get_calib_from_file(os.path.join(calib_path, fid+".txt"))
+        objs = kitti_utils.get_objects_from_label(os.path.join(label_path, l), "detect")
+        points =  np.fromfile(os.path.join(velodyne_path, fid+".bin"), dtype=np.float32).reshape(-1,4)
+        
+        for obj in objs:
 
+            if(obj.obj_type not in class_cnt):
+                class_cnt[obj.obj_type] = 0
+            else:
+                class_cnt[obj.obj_type] += 1
+                
+            file_name = f"{fid}_{obj.obj_type}_{class_cnt[obj.obj_type]}.bin"
+            in_points_flag = kitti_utils.points_in_box(points[:,:3], obj.box3d)      
+            points_in_box = points[in_points_flag]     
+            center = np.array([obj.box3d['x'], obj.box3d['y'], obj.box3d['z']] )
+            points_in_box[:, :3] -= center
+            point_num = points_in_box.shape[0]            
+            points_in_box.tofile(os.path.join(db_path,file_name))
+            data_info.append(get_info(obj, point_num, fid, file_name,i))
+            
+            if(draw):
+                pl=plot.Plot()
+                pl.name(file_name[:-4])
+                # pl.draw_bbox_dict(obj.box3d)
+                pl.draw_cube(obj.box3d['corners_3d_cam']-center)
+                for p in points_in_box:
+                    pl.draw_point(p)           
+                pl.show1()
+                
+    with open(os.path.join(out_path, "info.pkl"), 'wb') as file:
+        pickle.dump(data_info, file)
+    print(f"Extract {len(data_info)} object in {num} pcd and output to {os.path.join(out_path,'gt_database')}")
     
 if __name__ == "__main__":
     create_groundtruth_database()
