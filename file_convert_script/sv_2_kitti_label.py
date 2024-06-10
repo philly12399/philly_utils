@@ -2,6 +2,9 @@ import os
 import sys
 import click
 import json
+import pdb
+import numpy as np
+import copy
 @click.command()
 ### Add your options here
 @click.option(
@@ -9,14 +12,14 @@ import json
     "-s",
     type=str,
     # default="/home/philly12399/philly_data/pingtung-tracking-val/sv/pingtungw1_seq4_episodes",
-    default="/home/philly12399/seq4",
+    default="/home/philly12399/philly_ssd/sv_seq4_v1",
     help="Path of sv episodes",
 )
 @click.option(
     "--outpath",
     "-o",
     type=str,
-    default="/home/philly12399/philly_data/sv_out",
+    default="/home/philly12399/philly_ssd/sv_out",
     help="Path of output",
 )
 @click.option(
@@ -115,11 +118,12 @@ def sv2kittilabel(sv_episodes, outpath, mode, realsize=True): #realsize是一次
                     continue
                 dup[k]=1
                 if(realsize):
-                    bd= obj[k]["realsize"]
+                    bd= copy.deepcopy(obj[k]["realsize"])
                 else:
-                    bd=bbox["geometry"]["dimensions"]
-                    
-                euler=bbox["geometry"]["rotation"]["z"]
+                    bd=copy.deepcopy(bbox["geometry"]["dimensions"])
+                
+                bd['x'],bd['y'] = bd['y'],bd['x'] ##debug 20240611
+                euler=bbox["geometry"]["rotation"]["z"] + np.pi/2 ##debug 20240611
                 bp=bbox["geometry"]["position"]
                 # check tag
                 occlude = obj[k]["tags"][frame["index"]]
