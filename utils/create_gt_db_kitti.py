@@ -149,6 +149,8 @@ def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, n
                 if(draw):
                     obj.box3d['x'], obj.box3d['y'], obj.box3d['z'] = 0,0,0
                     plot.draw_pcd_and_bbox(points_in_box,obj.box3d)
+                    # print(obj.box3d)
+                    # plot.draw_pcd_and_bbox(points,obj.box3d)
         print(f"Extract {len(data_info)} object and skip {skipcnt} low points object in {num} pcd and output to {db_path}")
         all_data_info[seq] = data_info       
     with open(os.path.join(out_path, "info.pkl"), 'wb') as file:
@@ -171,7 +173,7 @@ def read_txt_file(file_path):
         lines = file.readlines()
     return lines
 
-    
+##deprecate
 def create_groundtruth_database_kitti_detect(kitti_path, label_path0, out_path, num, draw, clean):
     print(f"Create database from kitti detect format")        
     

@@ -29,9 +29,8 @@ class Object3d(object):
         if(self.dataset == "kitti"): #rect to velo
             self.box3d = bbox_rect_to_velo(self.box3d, calib)
         elif(self.dataset == "wayside"): #H,L互換
-            tmp = self.box3d['h'] 
-            self.box3d['h'] = self.box3d['l']
-            self.box3d['l'] = tmp
+            self.box3d['h'] ,self.box3d['w'] ,self.box3d['l'] = self.box3d['l'] ,self.box3d['w'] ,self.box3d['h'] 
+            pass
         else: assert False
         self.score = float(label[15]) if label.__len__() == 16 else -1.0
 
