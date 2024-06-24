@@ -14,6 +14,7 @@ import pdb
 )
 #root="/home/philly12399/thesis/AB3DMOT/tracker_exp_local/0612_KT_BASELINE"
 def main(root):
+    # root="/home/philly12399/thesis/AB3DMOT/tracker_exp_local/Wayside40"
     diff_range=[0,1,2,3,4]
     for r1 in sorted(os.listdir(root)):
         r1 = os.path.join(root, r1)

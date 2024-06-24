@@ -1,11 +1,19 @@
 import os
 import sys
-
+import click
 import pdb
 ##AB3DMOT 舊版的RESULT轉成新版的RESULT
-
-def main():
-    # allroot="/home/philly12399/thesis/AB3DMOT/tracker_exp_local/0612_KT_BASELINE"    
+@click.command()
+### Add your options here
+@click.option(
+    "--allroot",
+    "-r",
+    type=str,
+    default="",
+    help="Path of detection root .",
+)
+def main(allroot):
+    # allroot="/home/philly12399/thesis/AB3DMOT/tracker_exp_local/Wayside40/"    
     
     diff_range=[0,1,2,3,4]    
     
