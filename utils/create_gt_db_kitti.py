@@ -71,12 +71,12 @@ def create_groundtruth_database(kitti_path,label, out_path, mode, num, draw, cle
         create_groundtruth_database_kitti_detect(kitti_path,label, out_path, num, draw, clean)
     elif(mode == "track"):
         # SEQ=list(range(0,21)) #kitti
-        SEQ=[21] # wayside
+        SEQ=[1] # wayside
         create_groundtruth_database_kitti_track(kitti_path,label, out_path, num, draw, clean,seqlist=SEQ, dataset=format)
     else:
         print("Please input correct mode, track or detect")
 
-        
+import pdb  
 def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, num, draw, clean, seqlist=[], dataset="kitti"):
     print(f"Create database from kitti track format")     
        
@@ -90,8 +90,8 @@ def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, n
     print(seqlist)
     
     #Filter,if not in filter, drop
-    OCC_FILTER=[0,1,2,3] 
-    CLASS_FILTER=['car','cyclist']
+    OCC_FILTER=[-1,0,1,2,3] 
+    CLASS_FILTER=['car']
     MIN_POINTS=32
     MIN_POINTS_FLAG=False
     print(f"With occlusion filter {OCC_FILTER}, class filter {CLASS_FILTER}")       
@@ -109,11 +109,18 @@ def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, n
         os.system(f"mkdir -p {db_path}")        
         calib = kitti_utils.get_calib_from_file(calib_path)
         file_list = sorted(os.listdir(velodyne_path))
-        
         objs = kitti_utils.get_objects_from_label(label_path, "track", calib, dataset)
-        objs_frame = [[] for i in range(len(file_list))]
+        framenum=int(file_list[-1][:-4])+1
+        
+        assert(framenum == len(file_list)), f"Frame number {framenum} not equal to file number {len(file_list)}"
+            
+        objs_frame = [[] for i in range(framenum)]
         for o in objs:
-            objs_frame[o.frame_id].append(o)    
+            try:
+                objs_frame[o.frame_id].append(o)    
+            except:
+                print(o.frame_id)
+                pdb.set_trace()
 
         data_info=[] 
         for i,l in enumerate(tqdm(file_list)):
@@ -190,9 +197,9 @@ def create_groundtruth_database_kitti_detect(kitti_path, label_path0, out_path, 
     if(num<0):
         num = len(os.listdir(label_path))
     file_list = sorted(os.listdir(label_path))
-    
     data_info=[]
     for i,l in enumerate(tqdm(file_list)):
+        # print(i,l)
         if(i >= num):
             break
         class_cnt={}
