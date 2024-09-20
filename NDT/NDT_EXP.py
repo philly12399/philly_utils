@@ -56,7 +56,7 @@ def write_trackid_info(tracks_obj,EXP_PATH):
 def get_NDT_by_trackid(tracks_obj,root_dense,NDT_cache_path,EXP_PATH):
     root_dense = os.path.join(root_dense,'gt_database/')
     cls=tracks_obj.keys()
-    cls=['cyclist']
+    # cls=['cyclist']
     for c in cls:
         trks=tracks_obj[c]
         trackid_exp_path=os.path.join(EXP_PATH,c)
@@ -77,11 +77,65 @@ def get_NDT_by_trackid(tracks_obj,root_dense,NDT_cache_path,EXP_PATH):
                 # bbox=x['obj']['box3d']
                 # bbox['x'],bbox['y'],bbox['z'],bbox['roty']=0,0,0,0
                 # plot.draw_pcd_and_bbox_v2(dense,bbox)  
-            cnt+=1        
-            
+            cnt+=1                
     return
     
-    
+def merge_NDT_of_track(tracks_obj,root_dense,EXP_PATH,max_occ=1):
+    root_dense = os.path.join(root_dense,'gt_database/')
+    cls=tracks_obj.keys()
+    cls=['car']
+    for c in cls:
+        trks=tracks_obj[c]
+        trackid_exp_path=os.path.join(EXP_PATH,c)
+        merged_track_exp_path=os.path.join(EXP_PATH,f"{c}_all")      
+        os.system(f"mkdir -p {merged_track_exp_path}")
+        merged_member={}
+        for trackid in trks:
+            track = trks[trackid]
+            print(f"merging {c} trackid:{trackid} len:{len(trks)}")
+            trackid_str=str(trackid).zfill(4)
+            merged_member[trackid_str]=[]            
+            merged_dense_path=os.path.join(merged_track_exp_path,f"{trackid_str}.pkl")
+            merged_dense = np.empty((0, 4)).astype(np.float32) 
+            for i,x in enumerate(track):
+                if(x['valid'] and x['obj']['occlusion']<=max_occ):
+                    dense_file=os.path.join(root_dense,x['mae_dense_path'])
+                    dense=io_utils.read_gt_points_from_bin(dense_file)                    
+                    dense = np.hstack((dense, np.zeros((dense.shape[0], 1)))).astype(np.float32)
+                    merged_dense = np.concatenate((merged_dense, dense), axis=0)     
+                    merged_member[trackid_str].append(i)
+            merged_dense.tofile(merged_dense_path)
+            md2 = io_utils.read_gt_points_from_bin(merged_dense_path)             
+        io_utils.write_pkl(merged_member,os.path.join(merged_track_exp_path,"merged_member.pkl"))            
+    return
+
+def merged_pcd_test(tracks_obj, EXP_PATH):
+    cls=tracks_obj.keys()
+    cls=['car']
+    for c in cls:
+        trks=tracks_obj[c]
+        trackid_exp_path=os.path.join(EXP_PATH,c)
+        merged_track_exp_path=os.path.join(EXP_PATH,f"{c}_all")      
+        merged_member=io_utils.read_pkl(os.path.join(merged_track_exp_path,"merged_member.pkl"))
+        for trackid in merged_member:
+            print(f"track:{trackid}, merge {len(merged_member[trackid])} frames")
+            track = trks[int(trackid)]
+            track_member = [track[i] for i in merged_member[trackid]]
+            merged_dense_path=os.path.join(merged_track_exp_path,f"{trackid}.pkl")
+            merged_dense = io_utils.read_gt_points_from_bin(merged_dense_path)       
+            bbox=track_member[0]['obj']['box3d']
+            bbox['x'],bbox['y'],bbox['z'],bbox['roty']=0,0,0,0
+            random_rows = merged_dense[np.random.choice(merged_dense.shape[0], 16384,replace=False)]
+            plot.draw_pcd_and_bbox_v2(random_rows,bbox) 
+        #     for i,x in enumerate(track):
+        #         if(x['valid'] and x['obj']['occlusion']<=max_occ):
+        #             dense_file=os.path.join(root_dense,x['mae_dense_path'])
+        #             dense=io_utils.read_gt_points_from_bin(dense_file)
+        #             dense = np.hstack((dense, np.zeros((dense.shape[0], 1))))
+        #             merged_dense = np.concatenate((merged_dense, dense), axis=0)                   
+        #             merged_member[trackid_str].append(i)     
+    return
+
 if __name__ == '__main__':
     seq=21
     seq = str(seq).zfill(4)
@@ -106,5 +160,8 @@ if __name__ == '__main__':
         tracks_obj = io_utils.read_pkl(INFO_PATH)
         print("load trackid info")
     
-    pdb.set_trace()
-    get_NDT_by_trackid(tracks_obj,root_dense,NDT_cache_path,EXP_PATH)
+    # pdb.set_trace()
+    # 把原本的NDT cache照trackid分類
+    # get_NDT_by_trackid(tracks_obj,root_dense,NDT_cache_path,EXP_PATH)
+    # merge_NDT_of_track(tracks_obj,root_dense,EXP_PATH)
+    merged_pcd_test(tracks_obj,EXP_PATH)
