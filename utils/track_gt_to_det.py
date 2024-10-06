@@ -77,6 +77,7 @@ def convert(gt_path,filename,format,output,args):
 def collect_data(file_path,format):
     data_by_trackid={}
     ##collect data of target class
+    # tk={}
     with open(file_path, "r") as f:
         for fi,line in enumerate(f):
             x = line.strip().split(' ')
@@ -89,11 +90,13 @@ def collect_data(file_path,format):
                 cls2id={'car':2,'cyclist':3}
                 neighbor = {'van':'car','truck':'car'}
             elif format == "wayside":
-                cls2id={'car':1,'cyclist':2}
+                cls2id={'car':1,'cyclist':2,}
                 neighbor = {'truck':'car'}
             else: assert False
             
             x[2] = x[2].lower()
+            # if(x[2]=='cyclist'): 
+            #     tk[x[1]]=1
             if(x[2] in neighbor): x[2] = neighbor[x[2]]
             if(x[2] not in cls2id): continue                    
             x[2] = x[2].capitalize()
@@ -113,6 +116,7 @@ def collect_data(file_path,format):
                 filtbuf+=f"{str(xi)} "
             filtbuf+="1.0\n" #score
             data_by_trackid[tid].append({'line':fi, 'trunc':trunc,'occ':occ,'buf':det,'filtbuf':filtbuf, 'class':tmpcls})
+    # print(tk)
     return data_by_trackid
 
 def data_filter(data_by_trackid, args):
