@@ -11,43 +11,62 @@ project_root = os.path.abspath(os.path.join(current_dir, '..'))
 sys.path.append(project_root)
 from utils import io_utils
 from utils import plot
-def gtdb_vis(root,seq,num=-1):
-    gtdb=os.path.join(root,"gt_database/")
-    pkl_path=os.path.join(root,"info.pkl")
-    pkl=io_utils.read_pkl(pkl_path)
-    seq = str(seq).zfill(4)
-    mode='path'
-    
-    for i,x in enumerate(pkl[seq]):
-        if(num!=-1 and i>=num): break
-        pcd_file=os.path.join(gtdb,seq,x[mode])
-        # print(dense_file)        
-        print(x)
-        pcd=io_utils.read_gt_points_from_bin(pcd_file)
-        bbox=x['obj']['box3d']
-        bbox['x'],bbox['y'],bbox['z']=0,0,0 
-        print(bbox['roty'])
-        plot.draw_pcd_and_bbox_v2(pcd,bbox)
+# def gtdb_vis(root,seq,num=-1):
+#     gtdb=os.path.join(root,"gt_database/")
+#     pkl_path=os.path.join(root,"info.pkl")
+#     pkl=io_utils.read_pkl(pkl_path)
+#     seq = str(seq).zfill(4)
+#     mode='path'
+#     print(len(pkl[seq]))
+#     for i,x in enumerate(pkl[seq]):
+#         if(num!=-1 and i>=num): break
+#         pcd_file=os.path.join(gtdb,seq,x[mode])
+#         # print(dense_file) 
+#         # print(x['obj'])
+#         if(x['obj']['obj_type']=='car'):    
+#             print(x)
+#             pcd=io_utils.read_gt_points_from_bin(pcd_file)
+#             bbox=x['obj']['box3d']
+#             bbox['x'],bbox['y'],bbox['z']=0,0,0 
+#             plot.draw_pcd_and_bbox_v2(pcd,bbox)
         
-def dense_vis(root,seq,num=-1):
+def dense_vis(root,seq,num=-1,dense_or_gt='dense'):
     gtdb=os.path.join(root,"gt_database/")
     pkl_path=os.path.join(root,"info.pkl")
     pkl=io_utils.read_pkl(pkl_path)
     seq = str(seq).zfill(4)
-    mode='mae_dense_path'
+    if(dense_or_gt=='dense'):
+        mode='mae_dense_path'
+    else:
+        mode='path'
+    print(len(pkl[seq]))
     for i,x in enumerate(pkl[seq]):
-        if(num!=-1 and i>=num): break        
-        dense_file=os.path.join(gtdb,x[mode])
+        if(num!=-1 and i>=num): break   
+        if(dense_or_gt=='dense'):
+            dense_file=os.path.join(gtdb,x[mode])
+        else:
+            dense_file=os.path.join(gtdb,seq,x[mode])
+            
         # print(dense_file)     
         print(x)   
+        # if(x['obj']['obj_type']=='car'):
+        #     continue
         dense=io_utils.read_gt_points_from_bin(dense_file)
         bbox=x['obj']['box3d']
-        bbox['x'],bbox['y'],bbox['z'],bbox['roty']=0,0,0,0
+        bbox['x'],bbox['y'],bbox['z']=0,0,0
+        if(dense_or_gt=='dense'):
+            bbox['roty']=0
         plot.draw_pcd_and_bbox_v2(dense,bbox)     
         
 if __name__ == '__main__':
-    # root="/home/philly12399/philly_utils/data/point_mae/exp0530/"
-    root="/home/philly12399/philly_utils/data/point_mae/gt_db/kitti/diff0_gtdb/"
-    gtdb_vis(root,1,-1)
-    # root="/home/philly12399/thesis/Point-MAE/dense_128_testing"    
-    # dense_vis(root,0,5)
+    # root2="/home/philly12399/philly_ssd/point_mae/output/outputseq21/dense_128_all/info.pkl"
+    # root3="/home/philly12399/philly_ssd/point_mae/output/dense_128_all/info_new.pkl"
+    
+
+    root1="/home/philly12399/philly_ssd/point_mae/output/mark_det_0/"
+    # dense_vis(root1,21,dense_or_gt='gt')
+    dense_vis(root1,21)
+
+    
+    
+    
