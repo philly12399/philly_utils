@@ -20,14 +20,14 @@ from copy import deepcopy
     "--label",
     "-l",
     type=str,
-    default="",
+    default="../data/KITTI_tracking/training/gt_det_set_seq/diff3",
     help="Path of label",
 )
 @click.option(
     "--out_path",
     "-o",
     type=str,
-    default="./output",
+    default="../data/gt_db/demo",
     help="Path of output",
 )
 @click.option(
@@ -71,8 +71,11 @@ def create_groundtruth_database(kitti_path,label, out_path, mode, num, draw, cle
         create_groundtruth_database_kitti_detect(kitti_path,label, out_path, num, draw, clean)
     elif(mode == "track"):
         # SEQ=list(range(0,21)) #kitti
-        SEQ=[1] # wayside
-        create_groundtruth_database_kitti_track(kitti_path,label, out_path, num, draw, clean,seqlist=SEQ, dataset=format)
+        # SEQ=[1,2,5,7,8,9,11,18,19,20]
+        # format="kitti"
+        SEQ=[21] # wayside
+        format="wayside"
+        create_groundtruth_database_kitti_track(kitti_path,label, out_path, num, draw, clean, seqlist=SEQ, dataset=format)
     else:
         print("Please input correct mode, track or detect")
 
@@ -91,12 +94,19 @@ def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, n
     
     #Filter,if not in filter, drop
     OCC_FILTER=[-1,0,1,2,3] 
-    CLASS_FILTER=['car']
+    CLASS_FILTER=['car','cyclist']
     MIN_POINTS=32
     MIN_POINTS_FLAG=False
+    
     print(f"With occlusion filter {OCC_FILTER}, class filter {CLASS_FILTER}")       
     skipcnt=0
     for s in seqlist:
+        ds=dataset
+        if(s>20):
+            ds="wayside"
+        else:
+            ds="kitti"   
+            
         seq = str(s).zfill(4)
         if(label_path0 != ""):
             label_path = os.path.join(label_path0, f"{seq}.txt")            
@@ -109,7 +119,8 @@ def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, n
         os.system(f"mkdir -p {db_path}")        
         calib = kitti_utils.get_calib_from_file(calib_path)
         file_list = sorted(os.listdir(velodyne_path))
-        objs = kitti_utils.get_objects_from_label(label_path, "track", calib, dataset)
+        objs = kitti_utils.get_objects_from_label(label_path, "track", calib, ds)
+        
         framenum=int(file_list[-1][:-4])+1
         
         assert(framenum == len(file_list)), f"Frame number {framenum} not equal to file number {len(file_list)}"

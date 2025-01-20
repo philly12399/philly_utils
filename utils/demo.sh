@@ -1,0 +1,1 @@
+python3 create_gt_db_kitti.py -l ../data/KITTI_tracking/training/merged_det/mark_det -o ../data/gt_db/demo

@@ -27,11 +27,18 @@ def read_gt_points_from_bin(bin_file):
     gt_points = np.fromfile(bin_file, dtype=np.float32).reshape(-1, 4)[:,:3]
     return gt_points     
   
-# if __name__=="__main__":
-    # root="/home/philly12399/philly_data/point_mae/gt_db/kitti/diff0_gtdb/"
-    # info=os.path.join(root,"info.pkl")
-    # info21=os.path.join(root,"info21.pkl")
-    # info_merge=os.path.join(root, "info_merged.pkl")
+if __name__=="__main__":
+    dir1 = "/mydata/point_mae/gt_db/demo_dets/info.pkl"
+    # dir1="/mydata/point_mae/output/demo/info.pkl"
+    i1=read_pkl(dir1)['0021']
+    
+    pdb.set_trace()
+    # info2=read_pkl(r2)
+    # info1['0001'] = info2['0001']
+    # out = "/home/philly12399/philly_ssd/point_mae/gt_db/kitti/diff0_gtdb/pkl/info_0821_newseq1.pkl"
+    # write_pkl(info1, out)
+    
+
     # m=read_pkl(info_merge)
     # for c in m:
     #     print(c,len(m[c]))

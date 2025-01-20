@@ -125,8 +125,8 @@ def merged_pcd_test(tracks_obj, EXP_PATH):
             merged_dense = io_utils.read_gt_points_from_bin(merged_dense_path)       
             bbox=track_member[0]['obj']['box3d']
             bbox['x'],bbox['y'],bbox['z'],bbox['roty']=0,0,0,0
-            random_rows = merged_dense[np.random.choice(merged_dense.shape[0], 16384,replace=False)]
-            plot.draw_pcd_and_bbox_v2(random_rows,bbox) 
+            random_rows = merged_dense[np.random.choice(merged_dense.shape[0], 4096, replace=False)]
+            # plot.draw_pcd_and_bbox_v2(random_rows,bbox) 
         #     for i,x in enumerate(track):
         #         if(x['valid'] and x['obj']['occlusion']<=max_occ):
         #             dense_file=os.path.join(root_dense,x['mae_dense_path'])
