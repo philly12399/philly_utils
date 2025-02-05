@@ -31,13 +31,6 @@ from copy import deepcopy
     help="Path of output",
 )
 @click.option(
-    "--mode",
-    "-m",
-    type=str,
-    default="track",
-    help="kitti format, track or detect",
-)
-@click.option(
     "--num",
     "-n",
     type=int,
@@ -66,18 +59,24 @@ from copy import deepcopy
     help="dataset format kitti/wayside",
 )
 
-def create_groundtruth_database(kitti_path,label, out_path, mode, num, draw, clean,format):
-    if(mode == "detect"):
-        create_groundtruth_database_kitti_detect(kitti_path,label, out_path, num, draw, clean)
-    elif(mode == "track"):
-        # SEQ=list(range(0,21)) #kitti
-        # SEQ=[1,2,5,7,8,9,11,18,19,20]
-        # format="kitti"
+def create_groundtruth_database(kitti_path,label, out_path, num, draw, clean,format):
+    COMBINATION="A1"
+    #A1
+    if(COMBINATION=="A1"):
         SEQ=[21] # wayside
         format="wayside"
-        create_groundtruth_database_kitti_track(kitti_path,label, out_path, num, draw, clean, seqlist=SEQ, dataset=format)
-    else:
-        print("Please input correct mode, track or detect")
+    #A2
+    elif(COMBINATION=="A2"):
+        SEQ=list(range(0,22)) 
+        format="kitti"
+    #A3
+    elif(COMBINATION=="A3"):
+        SEQ=list(range(0,21)) 
+        format="kitti"
+    else: #do your own settings
+        SEQ=[21] # wayside
+        format="wayside"        
+    create_groundtruth_database_kitti_track(kitti_path,label, out_path, num, draw, clean, seqlist=SEQ, dataset=format)
 
 import pdb  
 def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, num, draw, clean, seqlist=[], dataset="kitti"):
@@ -93,8 +92,8 @@ def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, n
     print(seqlist)
     
     #Filter,if not in filter, drop
-    OCC_FILTER=[-1,0,1,2,3] 
     CLASS_FILTER=['car','cyclist']
+    OCC_FILTER=[-1,0,1,2,3] 
     MIN_POINTS=32
     MIN_POINTS_FLAG=False
     
@@ -102,6 +101,7 @@ def create_groundtruth_database_kitti_track(kitti_path, label_path0, out_path, n
     skipcnt=0
     for s in seqlist:
         ds=dataset
+        #WARNING: hard code for wayside
         if(s>20):
             ds="wayside"
         else:
@@ -190,63 +190,5 @@ def read_txt_file(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
     return lines
-
-##deprecate
-def create_groundtruth_database_kitti_detect(kitti_path, label_path0, out_path, num, draw, clean):
-    print(f"Create database from kitti detect format")        
-    
-    if clean and os.path.exists(out_path):
-        print(f"Remove {out_path} and create again")       
-        os.system("rm -r {}".format(out_path))
-    
-    label_path = os.path.join(kitti_path, "label_2")
-    velodyne_path = os.path.join(kitti_path, "velodyne")
-    calib_path = os.path.join(kitti_path, "calib")
-    db_path = os.path.join(out_path, "gt_database")
-    os.system(f"mkdir -p {db_path}")
-    
-    if(num<0):
-        num = len(os.listdir(label_path))
-    file_list = sorted(os.listdir(label_path))
-    data_info=[]
-    for i,l in enumerate(tqdm(file_list)):
-        # print(i,l)
-        if(i >= num):
-            break
-        class_cnt={}
-        fid = l[:-4]
-        calib = kitti_utils.get_calib_from_file(os.path.join(calib_path, fid+".txt"))
-        objs = kitti_utils.get_objects_from_label(os.path.join(label_path, l), "detect")
-        points =  np.fromfile(os.path.join(velodyne_path, fid+".bin"), dtype=np.float32).reshape(-1,4)
-        
-        for obj in objs:
-
-            if(obj.obj_type not in class_cnt):
-                class_cnt[obj.obj_type] = 0
-            else:
-                class_cnt[obj.obj_type] += 1
-                
-            file_name = f"{fid}_{obj.obj_type}_{class_cnt[obj.obj_type]}.bin"
-            in_points_flag = kitti_utils.points_in_box(points[:,:3], obj.box3d)      
-            points_in_box = points[in_points_flag]     
-            center = np.array([obj.box3d['x'], obj.box3d['y'], obj.box3d['z']] )
-            points_in_box[:, :3] -= center
-            point_num = points_in_box.shape[0]            
-            points_in_box.tofile(os.path.join(db_path,file_name))
-            data_info.append(get_info(obj, point_num, fid, file_name,i))
-            
-            if(draw):
-                pl=plot.Plot()
-                pl.name(file_name[:-4])
-                # pl.draw_bbox_dict(obj.box3d)
-                pl.draw_cube(obj.box3d['corners_3d_cam']-center)
-                for p in points_in_box:
-                    pl.draw_point(p)           
-                pl.show1()
-                
-    with open(os.path.join(out_path, "info.pkl"), 'wb') as file:
-        pickle.dump(data_info, file)
-    print(f"Extract {len(data_info)} object in {num} pcd and output to {os.path.join(out_path,'gt_database')}")
-    
 if __name__ == "__main__":
     create_groundtruth_database()
